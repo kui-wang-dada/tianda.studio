@@ -1,12 +1,14 @@
 #!/bin/bash
 # tianda-web · 一次性 VPS 部署脚本
 # 用法（在 VPS 上执行）：
-#   curl -sL https://raw.githubusercontent.com/<owner>/tianda-web/main/scripts/setup-vps.sh | bash -s -- <owner>
-# 或手动 clone 后跑 ./scripts/setup-vps.sh <owner>
+#   curl -sL https://raw.githubusercontent.com/<owner>/<repo>/main/scripts/setup-vps.sh | bash -s -- <owner> [<repo>]
+# 或手动 clone 后跑 ./scripts/setup-vps.sh <owner> [<repo>]
+# 默认 owner=kui-wang-dada, repo=tianda.studio
 
 set -euo pipefail
 
 OWNER="${1:-kui-wang-dada}"
+REPO="${2:-tianda.studio}"
 DEPLOY_DIR="/srv/tianda-web"
 REPO_DIR="$DEPLOY_DIR/repo"
 
@@ -18,7 +20,7 @@ cd "$DEPLOY_DIR"
 # 1. clone 仓库到 /srv/tianda-web/repo（GH Actions 后续会 git pull）
 if [ ! -d "$REPO_DIR/.git" ]; then
   echo "→ git clone 到 $REPO_DIR"
-  git clone --depth=1 "https://github.com/${OWNER}/tianda-web.git" "$REPO_DIR"
+  git clone --depth=1 "https://github.com/${OWNER}/${REPO}.git" "$REPO_DIR"
 fi
 
 # 2. 软链 docker-compose.yml + postgres-init.sql 到 DEPLOY_DIR（compose 默认从 cwd 读）
