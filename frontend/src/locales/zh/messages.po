@@ -1,0 +1,29 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-05-04 00:00+0800\n"
+"Mime-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh\n"
+
+msgid "nav.home"
+msgstr "首页"
+
+msgid "nav.work"
+msgstr "作品"
+
+msgid "nav.writing"
+msgstr "文章"
+
+msgid "nav.about"
+msgstr "关于"
+
+msgid "nav.feedback"
+msgstr "留言"
+
+msgid "nav.hire"
+msgstr "雇用我"
+
+msgid "hero.status"
+msgstr "可接单 · 远程 · UTC+8"

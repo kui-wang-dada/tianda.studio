@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# 在 VPS 上构建 admin SPA 并把 dist/ 原子替换到 /srv/tianda-web/admin/。
+# 宝塔反代 admin.tianda.studio 网站根目录指向 /srv/tianda-web/admin。
+# 注意：admin 是 SPA，宝塔 nginx 配置需要 try_files $uri $uri/ /index.html。
+
+set -euo pipefail
+
+REPO_DIR="${REPO_DIR:-/srv/tianda-web/repo}"
+ADMIN_DIR="${ADMIN_DIR:-/srv/tianda-web/admin}"
+TMP_DIR="$(mktemp -d -p "$(dirname "$ADMIN_DIR")" .admin.XXXXXX)"
+
+cd "$REPO_DIR/admin"
+
+export VITE_API_BASE="${VITE_API_BASE:-https://api.tianda.studio}"
+
+pnpm install --frozen-lockfile
+pnpm build
+
+cp -R dist/. "$TMP_DIR/"
+
+if [ -d "$ADMIN_DIR" ]; then
+    OLD_DIR="${ADMIN_DIR}.old"
+    rm -rf "$OLD_DIR"
+    mv "$ADMIN_DIR" "$OLD_DIR"   # 保留 .old 一份，便于一键回滚
+fi
+mv "$TMP_DIR" "$ADMIN_DIR"
+
+echo "✓ admin deployed → $ADMIN_DIR (previous version kept at ${ADMIN_DIR}.old)"

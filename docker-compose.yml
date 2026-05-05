@@ -1,0 +1,46 @@
+# Production compose — 仅 api + db。
+# Frontend (Next.js) 与 Admin (Vite) 都是 VPS 本地构建的静态文件，宝塔直接静态托管，
+# 部署在 /srv/tianda-web/web 与 /srv/tianda-web/admin（见 scripts/deploy-{frontend,admin}.sh）。
+# 反代 / SSL 走宝塔面板，本 compose 不起 caddy/nginx。
+
+services:
+  api:
+    image: ghcr.io/kui-wang-dada/tianda-api:${TAG:-latest}
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      - ENV=${ENV:-prod}
+      - DATABASE_URL=postgresql+asyncpg://tianda:${DB_PASSWORD}@db:5432/tianda
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - IP_SALT=${IP_SALT}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
+      - COOKIE_SECURE=${COOKIE_SECURE:-true}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tianda
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: tianda
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tianda -d tianda"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:

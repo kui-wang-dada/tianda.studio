@@ -1,0 +1,51 @@
+{
+  "name": "tianda-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "predev": "velite build",
+    "dev": "next dev",
+    "prebuild": "lingui compile && velite build",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "tsc": "tsc --noEmit",
+    "lingui:extract": "lingui extract",
+    "lingui:compile": "lingui compile",
+    "velite": "velite"
+  },
+  "dependencies": {
+    "@lingui/core": "^5.5.0",
+    "@lingui/react": "^5.5.0",
+    "framer-motion": "^11.18.2",
+    "next": "15.5.4",
+    "react": "19.0.0",
+    "react-countup": "^6.5.3",
+    "react-dom": "19.0.0",
+    "shiki": "^1.29.2",
+    "zod": "^3.24.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@lingui/cli": "^5.5.0",
+    "@lingui/macro": "^5.5.0",
+    "@lingui/swc-plugin": "^5.5.2",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^22.10.5",
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "autoprefixer": "^10.4.20",
+    "babel-plugin-macros": "^3.1.0",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "15.5.4",
+    "postcss": "^8.5.1",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-pretty-code": "^0.14.3",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "velite": "^0.2.2"
+  },
+  "packageManager": "pnpm@10.0.0"
+}

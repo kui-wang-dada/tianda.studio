@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --paper: #faf8f4;
+    --paper2: #f3ede2;
+    --ink: #1a1a1a;
+    --brand: #c47f3a;
+    --brand2: #e09c5a;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+
+  ::selection {
+    background-color: rgba(196, 127, 58, 0.25);
+    color: #1a1a1a;
+  }
+
+  :where(a, button, [role="button"], input, textarea, select, summary):focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-paper rounded-sm;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply max-w-[1180px] mx-auto px-8;
+  }
+
+  .eyebrow {
+    @apply text-[11px] tracking-[0.25em] uppercase text-brand font-semibold font-mono;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
+/* rehype-pretty-code — preserve shiki's per-token coloring inside code blocks */
+.prose pre code [data-line] {
+  display: block;
+  padding: 0 0.25rem;
+}
+.prose pre code [data-highlighted-line] {
+  background-color: rgba(196, 127, 58, 0.08);
+  border-left: 2px solid theme("colors.brand");
+  padding-left: 0.75rem;
+  margin-left: -1rem;
+}
+.prose pre code [data-line-numbers] [data-line]::before {
+  content: counter(line);
+  counter-increment: line;
+  display: inline-block;
+  width: 2rem;
+  margin-right: 1rem;
+  text-align: right;
+  color: theme("colors.muted2");
+}
+/* Code block language badge (rehype-pretty-code adds data-language) */
+.prose figure[data-rehype-pretty-code-figure] {
+  margin: 1.5em 0;
+}
+.prose figure[data-rehype-pretty-code-figure] figcaption[data-rehype-pretty-code-title] {
+  background: theme("colors.paper2");
+  border: 1px solid theme("colors.line");
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  padding: 0.4em 1em;
+  font-family: theme("fontFamily.mono");
+  font-size: 0.8em;
+  color: theme("colors.muted");
+}
+.prose figure[data-rehype-pretty-code-figure] figcaption + pre {
+  border-radius: 0 0 8px 8px;
+  margin-top: 0;
+}

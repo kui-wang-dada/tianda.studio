@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000
+      NEXT_PUBLIC_SITE_URL: https://tianda.studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm lingui:compile
+      - run: pnpm velite
+      - run: pnpm tsc
+      - run: pnpm build
+
+  admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    env:
+      VITE_API_BASE: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: admin/pnpm-lock.yaml
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm tsc
+      - run: pnpm build
+
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tianda
+          POSTGRES_PASSWORD: tianda
+          POSTGRES_DB: tianda_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tianda -d tianda_test"
+          --health-interval 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://tianda:tianda@localhost:5432/tianda_test
+      ADMIN_TOKEN: ci-admin-token
+      IP_SALT: ci-salt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: uv sync
+      - run: uv run alembic upgrade head
+      - run: uv run ruff check
+      - run: uv run pytest -q

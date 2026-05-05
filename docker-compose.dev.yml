@@ -1,0 +1,46 @@
+# Local dev compose. Builds images from source.
+# Usage: `make dev` (from repo root) — only api + db come up here.
+# Frontend (Next.js 静态导出) → `make dev-web` 跑 next dev (端口 3000)。
+# Admin (Vite) → `make dev-admin` 跑 vite (端口 3002)。
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: tianda-api-dev:latest
+    restart: unless-stopped
+    environment:
+      - ENV=dev
+      - DATABASE_URL=postgresql+asyncpg://tianda:tianda@db:5432/tianda
+      - ADMIN_TOKEN=dev-admin-token
+      - IP_SALT=dev-salt
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3002,http://localhost:3001,http://localhost:3003
+      - COOKIE_DOMAIN=
+      - COOKIE_SECURE=false
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tianda
+      POSTGRES_PASSWORD: tianda
+      POSTGRES_DB: tianda
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_dev_data:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tianda -d tianda"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_dev_data:

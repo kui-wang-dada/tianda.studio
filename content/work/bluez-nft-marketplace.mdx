@@ -1,0 +1,50 @@
+---
+slug: bluez-nft-marketplace
+title:
+  zh: Bluez · NFT 市场
+  en: Bluez — NFT Marketplace
+excerpt:
+  zh: 基于 Seaport 协议的 NFT 交易市场，集成 IPFS 元数据存储与 OpenSea SDK。支持挂单、出价、批量操作。
+  en: NFT marketplace using Seaport protocol, with IPFS metadata storage and OpenSea SDK integration. Supports listings, offers, bulk actions.
+type: web3
+cover: /img/project/bluez/thumb.png
+images:
+  - /img/project/bluez/1.png
+  - /img/project/bluez/2.png
+  - /img/project/bluez/3.png
+  - /img/project/bluez/4.png
+  - /img/project/bluez/5.png
+tech_stack:
+  - React 18
+  - CRA + Craco
+  - Seaport
+  - OpenSea SDK
+  - IPFS
+  - Ethers v5
+  - Ant Design
+  - TypeScript
+role:
+  zh: 前端核心
+  en: Lead Frontend
+client: AstridDAO
+period: "2022.06 — 2023.02"
+tags:
+  - web3
+  - nft
+  - marketplace
+  - seaport
+published_at: 2023-02-10
+featured: true
+---
+
+## 背景
+
+NFT 市场的交易撮合传统上很重——上架、出价、撮合每一步都要链上交互。Seaport 通过链下签名 + 链上结算的混合架构，把多数交易开销降到 0 gas。Bluez 是把它落地为 OpenSea 风格 UI 的 NFT 交易市场。
+
+## 我的工作
+
+- React 18 + CRA + Craco 旧栈下完成全部商城功能
+- 集成 Seaport SDK：挂单、出价、撮合、取消的完整链下签名流程
+- IPFS 元数据上传 + 缓存策略，缩减 NFT 详情页冷启动时间
+- OpenSea SDK 同步元数据 + 跨市场比价
+- 与 backend 团队对接 ETL pipeline，把链上事件实时同步到 PG

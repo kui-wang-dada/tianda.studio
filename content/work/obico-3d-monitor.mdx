@@ -1,0 +1,43 @@
+---
+slug: obico-3d-monitor
+title:
+  zh: Obico · 3D 打印远程监控 App
+  en: Obico — 3D Printer Remote Monitor App
+excerpt:
+  zh: 用 Flutter 重写的 3D 打印机远程监控移动端，支持实时摄像头流、打印进度、暂停/取消、AI 错误检测。
+  en: Flutter rewrite of a 3D-printer remote monitor app — live camera stream, print progress, pause/cancel, AI failure detection.
+type: app
+cover: /img/project/obico/thumb.png
+images:
+  - /img/project/obico/1.png
+  - /img/project/obico/2.png
+tech_stack:
+  - Flutter
+  - Dart
+  - WebRTC
+  - REST API
+role:
+  zh: 移动端独立交付（Upwork）
+  en: Solo mobile delivery (Upwork)
+period: "2022.06 — 2022.10"
+external_url: "https://www.obico.io"
+tags:
+  - mobile
+  - flutter
+  - upwork
+  - webrtc
+published_at: 2022-10-20
+featured: true
+---
+
+## 背景
+
+Obico 是一款给 3D 打印机做"远程监控 + AI 失败检测"的开源平台。客户希望把原本的网页端体验做成原生移动 App，以便在外出/睡觉时也能盯着打印进度、出问题立即收到推送。
+
+## 我的工作
+
+- Flutter 双端 App（iOS + Android）
+- WebRTC 实时摄像头流接入（多机型适配）
+- 打印任务面板：进度、温度、Z 高度、暂停/取消
+- 推送通知：AI 检测到打印失败（spaghetti / 喷头堵塞）实时通知
+- 与现有 Django 后端的 REST API 对接

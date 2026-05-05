@@ -1,0 +1,29 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-05-04 00:00+0800\n"
+"Mime-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+msgid "nav.home"
+msgstr "Home"
+
+msgid "nav.work"
+msgstr "Work"
+
+msgid "nav.writing"
+msgstr "Writing"
+
+msgid "nav.about"
+msgstr "About"
+
+msgid "nav.feedback"
+msgstr "Feedback"
+
+msgid "nav.hire"
+msgstr "Hire me"
+
+msgid "hero.status"
+msgstr "Available · Remote · UTC+8"
