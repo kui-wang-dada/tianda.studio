@@ -10,6 +10,8 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple/}
     environment:
       - ENV=${ENV:-prod}
       - DATABASE_URL=postgresql+asyncpg://tianda:${DB_PASSWORD}@db:5432/tianda

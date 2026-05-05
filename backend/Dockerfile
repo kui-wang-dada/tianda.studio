@@ -2,9 +2,13 @@
 # ─────────────── builder ───────────────
 FROM python:3.11-slim AS builder
 
+# 默认 pypi.org，VPS 上可通过 .env 设 PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+# 走阿里云内网镜像，比公网 PyPI 快 10x。
+ARG PIP_INDEX_URL=https://pypi.org/simple/
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_INDEX_URL=$PIP_INDEX_URL
 
 WORKDIR /app
 

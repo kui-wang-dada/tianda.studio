@@ -46,6 +46,9 @@ COOKIE_DOMAIN=.tianda.studio
 COOKIE_SECURE=true
 API_PORT=8000
 DB_PORT=5432
+
+# 阿里云 PyPI 镜像（国内 ECS 用），docker build 时通过 compose build.args 注入
+PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 EOF
   chmod 600 .env
   echo "  ✓ .env 已生成（chmod 600）。请记录 ADMIN_TOKEN：调 admin endpoint 用得着。"
