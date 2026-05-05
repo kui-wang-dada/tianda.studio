@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# 在 VPS 上构建 admin SPA 并把 dist/ 原子替换到 /srv/tianda-web/admin/。
-# 宝塔反代 admin.tianda.studio 网站根目录指向 /srv/tianda-web/admin。
+# 在 VPS 上构建 admin SPA 并把 dist/ 原子替换到 /www/wwwroot/tianda-web/admin/。
+# 宝塔反代 admin.tianda.studio 网站根目录指向 /www/wwwroot/tianda-web/admin。
 # 注意：admin 是 SPA，宝塔 nginx 配置需要 try_files $uri $uri/ /index.html。
 
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/srv/tianda-web/repo}"
-ADMIN_DIR="${ADMIN_DIR:-/srv/tianda-web/admin}"
+REPO_DIR="${REPO_DIR:-/www/wwwroot/tianda-web/repo}"
+ADMIN_DIR="${ADMIN_DIR:-/www/wwwroot/tianda-web/admin}"
 TMP_DIR="$(mktemp -d -p "$(dirname "$ADMIN_DIR")" .admin.XXXXXX)"
 
 cd "$REPO_DIR/admin"

@@ -185,8 +185,8 @@ SELECT id, type, name, email, message, created_at FROM feedbacks ORDER BY id DES
 
 | 改动路径 | 触发的 job | 流程 |
 |---|---|---|
-| `frontend/**` · `content/**` · `scripts/deploy-frontend.sh` | `deploy-frontend` | ssh 到 VPS → git pull → `pnpm build` → 原子替换 `/srv/tianda-web/web` |
-| `admin/**` · `scripts/deploy-admin.sh` | `deploy-admin` | ssh 到 VPS → git pull → `pnpm build` → 原子替换 `/srv/tianda-web/admin` |
+| `frontend/**` · `content/**` · `scripts/deploy-frontend.sh` | `deploy-frontend` | ssh 到 VPS → git pull → `pnpm build` → 原子替换 `/www/wwwroot/tianda-web/web` |
+| `admin/**` · `scripts/deploy-admin.sh` | `deploy-admin` | ssh 到 VPS → git pull → `pnpm build` → 原子替换 `/www/wwwroot/tianda-web/admin` |
 | `backend/**` · `docker-compose.yml` | `deploy-api` | ssh 到 VPS → git pull → `docker compose up -d --build --no-deps api db` + 健康检查 |
 | `.github/workflows/deploy.yml` | 三个全跑（保险） | — |
 
@@ -194,22 +194,22 @@ SELECT id, type, name, email, message, created_at FROM feedbacks ORDER BY id DES
 
 ### VPS 目录约定
 
-- `/srv/tianda-web/repo` — git 仓库（GH Actions ssh 进来 git pull 这里；compose 也在这里跑）
-- `/srv/tianda-web/web` — frontend 静态产物，宝塔托管 `tianda.studio` 指向此
-- `/srv/tianda-web/admin` — admin 静态产物，宝塔托管 `admin.tianda.studio` 指向此
-- `/srv/tianda-web/.env` — docker-compose 用的环境变量（由 `setup-vps.sh` 生成，chmod 600）
+- `/www/wwwroot/tianda-web/repo` — git 仓库（GH Actions ssh 进来 git pull 这里；compose 也在这里跑）
+- `/www/wwwroot/tianda-web/web` — frontend 静态产物，宝塔托管 `tianda.studio` 指向此
+- `/www/wwwroot/tianda-web/admin` — admin 静态产物，宝塔托管 `admin.tianda.studio` 指向此
+- `/www/wwwroot/tianda-web/.env` — docker-compose 用的环境变量（由 `setup-vps.sh` 生成，chmod 600）
 
 ### 在 VPS 上手动部署
 
 ```bash
-ssh vps "cd /srv/tianda-web/repo && git pull && ./scripts/deploy-frontend.sh"
-ssh vps "cd /srv/tianda-web/repo && git pull && ./scripts/deploy-admin.sh"
+ssh vps "cd /www/wwwroot/tianda-web/repo && git pull && ./scripts/deploy-frontend.sh"
+ssh vps "cd /www/wwwroot/tianda-web/repo && git pull && ./scripts/deploy-admin.sh"
 ```
 
 ### 宝塔反代配置
 
-- `tianda.studio` → 网站根目录 `/srv/tianda-web/web`，开启 SSL
-- `admin.tianda.studio` → 网站根目录 `/srv/tianda-web/admin`，开启 SSL，建议加 IP 白名单或 Basic Auth；
+- `tianda.studio` → 网站根目录 `/www/wwwroot/tianda-web/web`，开启 SSL
+- `admin.tianda.studio` → 网站根目录 `/www/wwwroot/tianda-web/admin`，开启 SSL，建议加 IP 白名单或 Basic Auth；
   必须配置 SPA fallback（nginx）：`try_files $uri $uri/ /index.html;`
 - `api.tianda.studio` → 反代到 `http://127.0.0.1:8000`，开启 SSL
 
@@ -226,10 +226,10 @@ VPS 上的 `.env` 见根 [.env.example](./.env.example)，scp 上传即可。
 
 ```bash
 # API 回上个 sha（VPS 本地构建，回滚 = checkout 旧 sha 重 build）
-ssh vps "cd /srv/tianda-web/repo && git checkout <上个 sha> && docker compose --env-file /srv/tianda-web/.env up -d --build --no-deps api"
+ssh vps "cd /www/wwwroot/tianda-web/repo && git checkout <上个 sha> && docker compose --env-file /www/wwwroot/tianda-web/.env up -d --build --no-deps api"
 
 # Frontend / admin 回上个版本（部署脚本会保留 .old 副本到下次部署前）
-ssh vps "mv /srv/tianda-web/web /srv/tianda-web/web.failed && mv /srv/tianda-web/web.old /srv/tianda-web/web"
+ssh vps "mv /www/wwwroot/tianda-web/web /www/wwwroot/tianda-web/web.failed && mv /www/wwwroot/tianda-web/web.old /www/wwwroot/tianda-web/web"
 
 # 或者：git checkout <上个 sha> && ./scripts/deploy-{frontend,admin}.sh
 ```

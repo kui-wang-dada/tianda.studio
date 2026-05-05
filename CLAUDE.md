@@ -7,7 +7,7 @@ Personal brand portal for **Tianda Studio · 天大工作室** (Kevin Wang).
 - **Frontend** `frontend/` — Next.js 15 App Router (**`output: 'export'` 静态导出**) · TS · Tailwind 3 · Lingui 5 · Zustand · Framer Motion · Velite + MDX
 - **Admin SPA** `admin/` — Vite 6 + React 19 · TanStack Router (文件路由) · TanStack Query · axios · Tailwind · 独立子域 `admin.tianda.studio`
 - **Backend** `backend/` — FastAPI · Pydantic v2 · SQLAlchemy async · Alembic · Postgres 16 · slowapi
-- **部署形态** frontend / admin 都在 VPS 上由 GH Actions ssh 触发构建（`scripts/deploy-{frontend,admin}.sh`），产物落 `/srv/tianda-web/{web,admin}`，宝塔静态托管 + 反代 + SSL；compose 仅生产 `api + db`
+- **部署形态** frontend / admin 都在 VPS 上由 GH Actions ssh 触发构建（`scripts/deploy-{frontend,admin}.sh`），产物落 `/www/wwwroot/tianda-web/{web,admin}`，宝塔静态托管 + 反代 + SSL；compose 仅生产 `api + db`
 - **Package mgmt** `pnpm` (frontend / admin), `uv` (backend)
 
 ## Hard conventions

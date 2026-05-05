@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# 在 VPS 上构建主站并把产物原子替换到 /srv/tianda-web/web/。
+# 在 VPS 上构建主站并把产物原子替换到 /www/wwwroot/tianda-web/web/。
 # GH Actions ssh 到 VPS 后执行此脚本（先 git pull，再跑这个）。
-# 宝塔反代 tianda.studio 的网站根目录指向 /srv/tianda-web/web 即可。
+# 宝塔反代 tianda.studio 的网站根目录指向 /www/wwwroot/tianda-web/web 即可。
 
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/srv/tianda-web/repo}"
-WEB_DIR="${WEB_DIR:-/srv/tianda-web/web}"
+REPO_DIR="${REPO_DIR:-/www/wwwroot/tianda-web/repo}"
+WEB_DIR="${WEB_DIR:-/www/wwwroot/tianda-web/web}"
 TMP_DIR="$(mktemp -d -p "$(dirname "$WEB_DIR")" .web.XXXXXX)"
 
 cd "$REPO_DIR/frontend"

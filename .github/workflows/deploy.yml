@@ -48,7 +48,7 @@ jobs:
               - 'docker-compose.yml'
               - '.github/workflows/deploy.yml'
 
-  # Frontend → ssh 到 VPS：git pull → pnpm build → 原子替换 /srv/tianda-web/web
+  # Frontend → ssh 到 VPS：git pull → pnpm build → 原子替换 /www/wwwroot/tianda-web/web
   deploy-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
@@ -62,12 +62,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /srv/tianda-web/repo
+            cd /www/wwwroot/tianda-web/repo
             git fetch --depth=1 origin main
             git reset --hard origin/main
             ./scripts/deploy-frontend.sh
 
-  # Admin → ssh 到 VPS：git pull → pnpm build → 原子替换 /srv/tianda-web/admin
+  # Admin → ssh 到 VPS：git pull → pnpm build → 原子替换 /www/wwwroot/tianda-web/admin
   deploy-admin:
     needs: changes
     if: needs.changes.outputs.admin == 'true'
@@ -81,7 +81,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /srv/tianda-web/repo
+            cd /www/wwwroot/tianda-web/repo
             git fetch --depth=1 origin main
             git reset --hard origin/main
             ./scripts/deploy-admin.sh
@@ -100,9 +100,9 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /srv/tianda-web/repo
+            cd /www/wwwroot/tianda-web/repo
             git fetch --depth=1 origin main
             git reset --hard origin/main
-            docker compose --env-file /srv/tianda-web/.env up -d --build --no-deps api db
+            docker compose --env-file /www/wwwroot/tianda-web/.env up -d --build --no-deps api db
             sleep 6
-            docker compose --env-file /srv/tianda-web/.env exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose --env-file /srv/tianda-web/.env logs api && exit 1)
+            docker compose --env-file /www/wwwroot/tianda-web/.env exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose --env-file /www/wwwroot/tianda-web/.env logs api && exit 1)

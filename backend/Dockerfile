@@ -25,11 +25,20 @@ RUN uv pip install --system --no-cache \
 # ─────────────── runtime ───────────────
 FROM python:3.11-slim AS runtime
 
+# 默认走原 deb.debian.org，VPS 通过 build arg 切到阿里云镜像（mirrors.aliyun.com/debian）
+# 国内 ECS 拉包速度从 5KB/s → 50MB/s。
+ARG APT_MIRROR=
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/usr/local/bin:${PATH}"
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+RUN if [ -n "$APT_MIRROR" ]; then \
+        sed -i "s|http://deb.debian.org|$APT_MIRROR|g; s|http://security.debian.org|$APT_MIRROR|g" \
+            /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+        sed -i "s|http://deb.debian.org|$APT_MIRROR|g; s|http://security.debian.org|$APT_MIRROR|g" \
+            /etc/apt/sources.list 2>/dev/null || true; \
+    fi && \
+    apt-get update && apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/* && \
     groupadd --system --gid 1001 app && \
     useradd  --system --uid 1001 --gid app app

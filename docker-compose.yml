@@ -1,6 +1,6 @@
 # Production compose — 仅 api + db。
 # Frontend (Next.js) 与 Admin (Vite) 都是 VPS 本地构建的静态文件，宝塔直接静态托管，
-# 部署在 /srv/tianda-web/web 与 /srv/tianda-web/admin（见 scripts/deploy-{frontend,admin}.sh）。
+# 部署在 /www/wwwroot/tianda-web/web 与 /www/wwwroot/tianda-web/admin（见 scripts/deploy-{frontend,admin}.sh）。
 # 反代 / SSL 走宝塔面板，本 compose 不起 caddy/nginx。
 
 services:
@@ -12,6 +12,7 @@ services:
       dockerfile: backend/Dockerfile
       args:
         PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple/}
+        APT_MIRROR: ${APT_MIRROR:-}
     environment:
       - ENV=${ENV:-prod}
       - DATABASE_URL=postgresql+asyncpg://tianda:${DB_PASSWORD}@db:5432/tianda

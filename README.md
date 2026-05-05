@@ -51,7 +51,7 @@ V2_PLAN.md            V2 业务功能里程碑计划
 
 ## 部署回滚
 
-API 镜像在 VPS 本地由 `docker compose --build` 构建。回滚：VPS 上 `cd /srv/tianda-web/repo && git checkout <上个 sha> && docker compose --env-file /srv/tianda-web/.env up -d --build api`。
+API 镜像在 VPS 本地由 `docker compose --build` 构建。回滚：VPS 上 `cd /www/wwwroot/tianda-web/repo && git checkout <上个 sha> && docker compose --env-file /www/wwwroot/tianda-web/.env up -d --build api`。
 Frontend / admin 静态产物：每次部署前 `mv` 旧目录到 `.old`，部署失败可直接 `mv` 回来；或者 `git checkout <sha>` 后手动跑对应 deploy 脚本。
 
 V1 架构改造与 V2 业务功能规划：[V2_PLAN.md](./V2_PLAN.md)
