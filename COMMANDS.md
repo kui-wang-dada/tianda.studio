@@ -187,7 +187,7 @@ SELECT id, type, name, email, message, created_at FROM feedbacks ORDER BY id DES
 |---|---|---|
 | `frontend/**` · `content/**` · `scripts/deploy-frontend.sh` | `deploy-frontend` | ssh 到 VPS → git pull → `pnpm build` → 原子替换 `/srv/tianda-web/web` |
 | `admin/**` · `scripts/deploy-admin.sh` | `deploy-admin` | ssh 到 VPS → git pull → `pnpm build` → 原子替换 `/srv/tianda-web/admin` |
-| `backend/**` · `docker-compose.yml` | `deploy-api` | 构建 api 镜像推 GHCR → ssh `docker compose up -d --no-deps api` + 健康检查 |
+| `backend/**` · `docker-compose.yml` | `deploy-api` | ssh 到 VPS → git pull → `docker compose up -d --build --no-deps api db` + 健康检查 |
 | `.github/workflows/deploy.yml` | 三个全跑（保险） | — |
 
 强制重发某项：GitHub UI → Actions → Deploy → Run workflow，勾选对应 `force-*`。
@@ -226,8 +226,8 @@ VPS 上的 `.env` 见根 [.env.example](./.env.example)，scp 上传即可。
 ### 回滚
 
 ```bash
-# API 回上个 sha
-ssh vps "cd /srv/tianda-web && TAG=<上个 sha> docker compose up -d --no-deps api"
+# API 回上个 sha（VPS 本地构建，回滚 = checkout 旧 sha 重 build）
+ssh vps "cd /srv/tianda-web/repo && git checkout <上个 sha> && cd .. && docker compose up -d --build --no-deps api"
 
 # Frontend / admin 回上个版本（部署脚本会保留 .old 副本到下次部署前）
 ssh vps "mv /srv/tianda-web/web /srv/tianda-web/web.failed && mv /srv/tianda-web/web.old /srv/tianda-web/web"

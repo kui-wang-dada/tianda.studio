@@ -5,7 +5,7 @@
 
 services:
   api:
-    image: ghcr.io/kui-wang-dada/tianda-api:${TAG:-latest}
+    image: tianda-api:local
     restart: unless-stopped
     build:
       context: .

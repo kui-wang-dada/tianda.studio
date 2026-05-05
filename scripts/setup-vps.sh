@@ -1,9 +1,12 @@
 #!/bin/bash
-# tianda-web · 一次性 VPS 部署脚本
+# tianda-web · 一次性 VPS 环境初始化脚本（不部署，只打底）
 # 用法（在 VPS 上执行）：
 #   curl -sL https://raw.githubusercontent.com/<owner>/<repo>/main/scripts/setup-vps.sh | bash -s -- <owner> [<repo>]
 # 或手动 clone 后跑 ./scripts/setup-vps.sh <owner> [<repo>]
 # 默认 owner=kui-wang-dada, repo=tianda.studio
+#
+# 跑完后 VPS 已具备：仓库 / .env / docker-compose 软链 / pnpm。
+# 真正的首次部署由 GitHub Actions 触发（push to main 或 Run workflow）。
 
 set -euo pipefail
 
@@ -33,7 +36,6 @@ if [ ! -f .env ]; then
   cat > .env <<EOF
 # 自动生成于 $(date)
 ENV=prod
-TAG=latest
 DB_PASSWORD=$(openssl rand -hex 24)
 ADMIN_TOKEN=$(openssl rand -hex 32)
 IP_SALT=$(openssl rand -hex 32)
@@ -47,48 +49,47 @@ EOF
   echo "  ✓ .env 已生成（chmod 600）。请记录 ADMIN_TOKEN：调 admin endpoint 用得着。"
 fi
 
-# 4. 准备静态产物目录
+# 4. 准备静态产物目录（GH Actions 首次部署会原子替换它们）
 mkdir -p "$DEPLOY_DIR/web" "$DEPLOY_DIR/admin"
 
-# 5. 安装 pnpm（VPS 上要构建静态产物）
+# 5. 安装 pnpm（VPS 上构建 frontend / admin 用）
 if ! command -v pnpm >/dev/null; then
   echo "→ 安装 pnpm"
   curl -fsSL https://get.pnpm.io/install.sh | sh -
   export PATH="$HOME/.local/share/pnpm:$PATH"
+  # 确保 GH Actions 之后 ssh 进来也能找到 pnpm
+  if ! grep -q "pnpm" ~/.bashrc 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/share/pnpm:$PATH"' >> ~/.bashrc
+  fi
 fi
 
-# 6. docker login GHCR（拉 api 镜像用）
-echo "→ docker login ghcr.io"
-echo "  请输入 GitHub username + Personal Access Token (scope: read:packages):"
-docker login ghcr.io
-
-# 7. 首次构建 frontend / admin
-echo "→ 首次构建 frontend"
-"$REPO_DIR/scripts/deploy-frontend.sh"
-echo "→ 首次构建 admin"
-"$REPO_DIR/scripts/deploy-admin.sh"
-
-# 8. 拉 api 镜像 + 启动
-echo "→ 拉 api 镜像 + 启动"
-docker compose pull
-docker compose up -d
-
-echo "→ 等待 api 起来..."
-sleep 10
-docker compose ps
-
-echo ""
-echo "→ 健康检查"
-if curl -fsS http://localhost:8000/api/v1/health; then
-  echo ""
-  echo "✅ 部署成功"
-  echo ""
-  echo "下一步（宝塔面板）："
-  echo "  1. 新建网站 tianda.studio → 网站根目录指向 $DEPLOY_DIR/web → 申请 Let's Encrypt SSL"
-  echo "  2. 新建网站 admin.tianda.studio → 根目录 $DEPLOY_DIR/admin → SSL → nginx 配置 try_files \$uri \$uri/ /index.html"
-  echo "  3. 新建网站 api.tianda.studio → 反代到 http://127.0.0.1:8000 → SSL"
-  echo "  4. push 到 main 触发自动部署"
-else
-  echo "❌ 健康检查失败，看 logs：docker compose logs api"
+# 6. 检查 docker / docker compose
+if ! command -v docker >/dev/null; then
+  echo "❌ 未安装 docker。请先装：curl -fsSL https://get.docker.com | bash"
   exit 1
 fi
+if ! docker compose version >/dev/null 2>&1; then
+  echo "❌ 未装 docker compose plugin。请用宝塔面板的 Docker 模块安装，或参考 https://docs.docker.com/compose/install/"
+  exit 1
+fi
+
+cat <<EOF
+
+✅ VPS 环境初始化完成
+
+目录结构：
+  $DEPLOY_DIR/
+  ├── repo/                 git 仓库
+  ├── web/ admin/           静态产物（待 GH Actions 首次部署填充）
+  ├── docker-compose.yml    → 软链
+  ├── postgres-init.sql     → 软链
+  └── .env                  随机 secrets（chmod 600）
+
+下一步：
+  1. 配 GitHub Secrets：VPS_HOST / VPS_USER / VPS_SSH_KEY
+  2. push 到 main，或在仓库 Actions → Deploy → Run workflow 勾选 force-* 触发首次部署
+  3. 部署完成后在宝塔面板配 3 个网站：
+     - tianda.studio        → 根目录 $DEPLOY_DIR/web    + SSL
+     - admin.tianda.studio  → 根目录 $DEPLOY_DIR/admin  + SSL + nginx try_files \$uri \$uri/ /index.html
+     - api.tianda.studio    → 反代 http://127.0.0.1:8000 + SSL
+EOF
