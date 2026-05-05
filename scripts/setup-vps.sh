@@ -21,12 +21,11 @@ sudo chown "$USER:$USER" "$DEPLOY_DIR"
 cd "$DEPLOY_DIR"
 
 # 1. clone 仓库到 /srv/tianda-web/repo（GH Actions 后续会 git pull）
-# 注意：大陆 ECS 访问 github.com 通常需要代理，请把 HTTP_PROXY / HTTPS_PROXY
-# 配在 /etc/environment 里（不是 ~/.bashrc），否则 GH Actions ssh 非交互
-# 会话取不到代理变量，git fetch 会超时。
+# 前置条件：你已经在 GitHub 仓库的 Settings → Deploy keys 加过本机公钥，
+# 并配好 ~/.ssh/config 让 git@github.com 走对应私钥。详见 README 部署章节。
 if [ ! -d "$REPO_DIR/.git" ]; then
   echo "→ git clone 到 $REPO_DIR"
-  git clone --depth=1 "https://github.com/${OWNER}/${REPO}.git" "$REPO_DIR"
+  git clone --depth=1 "git@github.com:${OWNER}/${REPO}.git" "$REPO_DIR"
 fi
 
 # 2. 清理历史遗留软链（旧版本曾把 compose 软链到 DEPLOY_DIR，新版本直接 cd 进 repo 跑）
