@@ -194,11 +194,10 @@ SELECT id, type, name, email, message, created_at FROM feedbacks ORDER BY id DES
 
 ### VPS 目录约定
 
-- `/srv/tianda-web/repo` — git 仓库（GH Actions ssh 进来 git pull 这里）
+- `/srv/tianda-web/repo` — git 仓库（GH Actions ssh 进来 git pull 这里；compose 也在这里跑）
 - `/srv/tianda-web/web` — frontend 静态产物，宝塔托管 `tianda.studio` 指向此
 - `/srv/tianda-web/admin` — admin 静态产物，宝塔托管 `admin.tianda.studio` 指向此
-- `/srv/tianda-web/.env` — docker-compose 用的环境变量（scp 上传）
-- `/srv/tianda-web/docker-compose.yml` — 通过 git pull 自动同步（仓库根的同名文件）
+- `/srv/tianda-web/.env` — docker-compose 用的环境变量（由 `setup-vps.sh` 生成，chmod 600）
 
 ### 在 VPS 上手动部署
 
@@ -227,7 +226,7 @@ VPS 上的 `.env` 见根 [.env.example](./.env.example)，scp 上传即可。
 
 ```bash
 # API 回上个 sha（VPS 本地构建，回滚 = checkout 旧 sha 重 build）
-ssh vps "cd /srv/tianda-web/repo && git checkout <上个 sha> && cd .. && docker compose up -d --build --no-deps api"
+ssh vps "cd /srv/tianda-web/repo && git checkout <上个 sha> && docker compose --env-file /srv/tianda-web/.env up -d --build --no-deps api"
 
 # Frontend / admin 回上个版本（部署脚本会保留 .old 副本到下次部署前）
 ssh vps "mv /srv/tianda-web/web /srv/tianda-web/web.failed && mv /srv/tianda-web/web.old /srv/tianda-web/web"

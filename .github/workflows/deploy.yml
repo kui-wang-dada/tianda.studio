@@ -103,7 +103,6 @@ jobs:
             cd /srv/tianda-web/repo
             git fetch --depth=1 origin main
             git reset --hard origin/main
-            cd /srv/tianda-web
-            docker compose up -d --build --no-deps api db
+            docker compose --env-file /srv/tianda-web/.env up -d --build --no-deps api db
             sleep 6
-            docker compose exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose logs api && exit 1)
+            docker compose --env-file /srv/tianda-web/.env exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose --env-file /srv/tianda-web/.env logs api && exit 1)

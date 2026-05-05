@@ -21,14 +21,16 @@ sudo chown "$USER:$USER" "$DEPLOY_DIR"
 cd "$DEPLOY_DIR"
 
 # 1. clone 仓库到 /srv/tianda-web/repo（GH Actions 后续会 git pull）
+# 注意：大陆 ECS 访问 github.com 通常需要代理，请把 HTTP_PROXY / HTTPS_PROXY
+# 配在 /etc/environment 里（不是 ~/.bashrc），否则 GH Actions ssh 非交互
+# 会话取不到代理变量，git fetch 会超时。
 if [ ! -d "$REPO_DIR/.git" ]; then
   echo "→ git clone 到 $REPO_DIR"
   git clone --depth=1 "https://github.com/${OWNER}/${REPO}.git" "$REPO_DIR"
 fi
 
-# 2. 软链 docker-compose.yml + postgres-init.sql 到 DEPLOY_DIR（compose 默认从 cwd 读）
-ln -sf "$REPO_DIR/docker-compose.yml" "$DEPLOY_DIR/docker-compose.yml"
-ln -sf "$REPO_DIR/postgres-init.sql" "$DEPLOY_DIR/postgres-init.sql"
+# 2. 清理历史遗留软链（旧版本曾把 compose 软链到 DEPLOY_DIR，新版本直接 cd 进 repo 跑）
+rm -f "$DEPLOY_DIR/docker-compose.yml" "$DEPLOY_DIR/postgres-init.sql"
 
 # 3. 生成 .env（仅 api + db 运行时变量）
 if [ ! -f .env ]; then
@@ -79,11 +81,9 @@ cat <<EOF
 
 目录结构：
   $DEPLOY_DIR/
-  ├── repo/                 git 仓库
+  ├── repo/                 git 仓库（compose 文件 + 源码都在这里跑）
   ├── web/ admin/           静态产物（待 GH Actions 首次部署填充）
-  ├── docker-compose.yml    → 软链
-  ├── postgres-init.sql     → 软链
-  └── .env                  随机 secrets（chmod 600）
+  └── .env                  随机 secrets（chmod 600，由 docker compose --env-file 读）
 
 下一步：
   1. 配 GitHub Secrets：VPS_HOST / VPS_USER / VPS_SSH_KEY
