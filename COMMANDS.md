@@ -226,7 +226,7 @@ VPS 上的 `.env` 见根 [.env.example](./.env.example)，scp 上传即可。
 
 ```bash
 # API 回上个 sha（VPS 本地构建，回滚 = checkout 旧 sha 重 build）
-ssh vps "cd /www/wwwroot/tianda-web/repo && git checkout <上个 sha> && docker compose --env-file /www/wwwroot/tianda-web/.env up -d --build --no-deps api"
+ssh vps "cd /www/wwwroot/tianda-web/repo && git checkout <上个 sha> && set -a && . /www/wwwroot/tianda-web/.env && set +a && docker compose up -d --build --no-deps api"
 
 # Frontend / admin 回上个版本（部署脚本会保留 .old 副本到下次部署前）
 ssh vps "mv /www/wwwroot/tianda-web/web /www/wwwroot/tianda-web/web.failed && mv /www/wwwroot/tianda-web/web.old /www/wwwroot/tianda-web/web"

@@ -103,6 +103,10 @@ jobs:
             cd /www/wwwroot/tianda-web/repo
             git fetch --depth=1 origin main
             git reset --hard origin/main
-            docker compose --env-file /www/wwwroot/tianda-web/.env up -d --build --no-deps api db
+            # 把 .env 加载到 shell 环境，确保 compose 的 ${VAR:-default} 插值能拿到 PIP_INDEX_URL / APT_MIRROR 等
+            set -a
+            . /www/wwwroot/tianda-web/.env
+            set +a
+            docker compose up -d --build --no-deps api db
             sleep 6
-            docker compose --env-file /www/wwwroot/tianda-web/.env exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose --env-file /www/wwwroot/tianda-web/.env logs api && exit 1)
+            docker compose exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose logs api && exit 1)
