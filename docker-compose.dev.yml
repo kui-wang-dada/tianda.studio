@@ -20,6 +20,13 @@ services:
       - COOKIE_SECURE=false
     ports:
       - "8000:8000"
+    # 覆盖镜像里的生产 entrypoint，dev 用 --reload 单 worker
+    entrypoint: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app"]
+    # 把宿主机源码挂到容器，改 .py 立刻被 uvicorn 检测到
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
+      - ./backend/alembic.ini:/app/alembic.ini:ro
     depends_on:
       db:
         condition: service_healthy

@@ -54,9 +54,21 @@ export const upworkBadges: UpworkBadge[] = [
   { value: '43 / 2,233', label: { zh: '项目数 / 工时', en: 'Jobs / hours' } },
 ]
 
-export const upworkNarrative = {
-  zh: 'Upwork 上独立接单 5 年，累计 43 个项目、2,233 小时、$60K+ 交付，100% Job Success Rate · Top Rated Plus。客户来自 US / EU / JP，多为创业团队 / 独立产品负责人。一人对接、按周交付、报价透明 —— 从需求到上线全部包。不接超出我能力栈的活、不接需要纯外包搬砖的活。',
-  en: 'Five years of solo contracting on Upwork — 43 projects, 2,233 hours, $60K+ delivered, 100% Job Success · Top Rated Plus. Clients across US / EU / JP, mostly founders and indie product owners. Single point of contact, weekly delivery cadence, transparent pricing — spec to deploy in one hand. I do not take work outside my stack, and I do not do staff-aug grunt work.',
+export const upworkNarrative: { zh: string[]; en: string[] } = {
+  zh: [
+    'Upwork 上独立接单 5 年，累计 43 个项目、2,233 小时、$60K+ 交付',
+    '100% Job Success Rate · Top Rated Plus（Upwork 顶级 1% 标识）',
+    '一人对接、按周交付、报价透明 —— 从需求到上线全部包',
+    '不接超出能力栈的活、不接需要纯外包搬砖的活',
+    '新合作可提供 **1-3 天免费开发或技术咨询**，对项目可行性、架构方案双向评估后再决定是否长期合作',
+  ],
+  en: [
+    'Five years on Upwork — 43 projects, 2,233 hours, $60K+ delivered',
+    '100% Job Success · Top Rated Plus (Upwork top 1% talent)',
+    'Single point of contact, weekly delivery, transparent pricing — spec to deploy in one hand',
+    'I do not take work outside my stack, nor staff-aug grunt work',
+    'New engagements get **1–3 days of free dev or consulting** so we can both assess feasibility and architecture before committing long-term',
+  ],
 }
 
 export interface UpworkMiniCase {
@@ -84,11 +96,5 @@ export const upworkMiniCases: UpworkMiniCase[] = [
     thumb: '/img/project/bluez/thumb.png',
     title: { zh: 'Bluez NFT 市场', en: 'Bluez NFT' },
     outcome: { zh: '多链上线', en: 'Multi-chain live' },
-  },
-  {
-    slug: 'wholeren-app',
-    thumb: '/img/project/wholeren/thumb.png',
-    title: { zh: 'Wholeren 留学 App', en: 'Wholeren App' },
-    outcome: { zh: '万级用户', en: '10K+ users' },
   },
 ]

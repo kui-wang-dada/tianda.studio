@@ -25,4 +25,9 @@ if [ -d "$ADMIN_DIR" ]; then
 fi
 mv "$TMP_DIR" "$ADMIN_DIR"
 
+# 让宝塔 nginx (www 用户) 能读
+if id www >/dev/null 2>&1; then
+    chown -R www:www "$ADMIN_DIR"
+fi
+
 echo "✓ admin deployed → $ADMIN_DIR (previous version kept at ${ADMIN_DIR}.old)"

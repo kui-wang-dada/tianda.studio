@@ -1,12 +1,58 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
 import { experience } from '@/lib/data/experience'
 import { skills } from '@/lib/data/skills'
-
-export const metadata: Metadata = { title: '关于 · About' }
+import { getWork, pickLocaleField } from '@/lib/content'
+import { useLocale } from '@/lib/i18n/use-locale'
 
 export default function AboutPage() {
+  const locale = useLocale()
+  const workCount = getWork().length
+
+  const t = locale === 'zh'
+
+  const basicInfo = [
+    { k: { zh: '所在地', en: 'Location' }, v: { zh: '上海 (UTC+8)', en: 'Shanghai (UTC+8)' } },
+    { k: { zh: '语言', en: 'Languages' }, v: { zh: '中文母语 / 英文 Pro', en: 'Chinese (native) / English (pro)' } },
+    { k: { zh: '从业', en: 'Active since' }, v: { zh: '2016 — 至今', en: '2016 — now' } },
+    { k: { zh: '当前身份', en: 'Current role' }, v: { zh: '一人工作室创始人', en: 'Solo studio founder' } },
+    { k: { zh: '可接单', en: 'Available' }, v: { zh: '是 · 24h 内回复', en: 'Yes · reply within 24h' } },
+    { k: { zh: 'Upwork 评级', en: 'Upwork rating' }, v: { zh: 'Top Rated Plus · 100% JS', en: 'Top Rated Plus · 100% JS' } },
+  ]
+
+  const principles = [
+    {
+      title: { zh: '单一对接人', en: 'Single point of contact' },
+      body: {
+        zh: '从需求拆解、架构设计、编码、部署到后续维护一条龙。没有项目经理来回拉扯，也没有外包团队踢皮球。',
+        en: 'One person from spec to architecture to code to deploy to maintenance. No PMs bouncing tickets, no offshore teams hot-potatoing the work.',
+      },
+    },
+    {
+      title: { zh: 'Vibe Coding', en: 'Vibe Coding' },
+      body: {
+        zh: '日常用 Claude Code + Gemini CLI。让我能用更短的时间，交付传统 2-3 人团队的产出量。',
+        en: 'Claude Code + Gemini CLI in my daily flow. I ship like a 2–3 person team in less time.',
+      },
+    },
+    {
+      title: { zh: '24h 回复', en: 'Reply within 24h' },
+      body: {
+        zh: 'UTC+8 (上海)，工作日 24 小时内回复邮件 / Upwork 消息。',
+        en: 'UTC+8 (Shanghai). Email and Upwork messages answered within one business day.',
+      },
+    },
+    {
+      title: { zh: '中英无障碍', en: 'Bilingual' },
+      body: {
+        zh: '中文母语，英文 professional 等级。可以直接和国际客户开会与写技术文档。',
+        en: 'Native Chinese, professional English. Comfortable in international meetings and writing technical docs in English.',
+      },
+    },
+  ]
+
   return (
     <>
       {/* Hero */}
@@ -14,26 +60,38 @@ export default function AboutPage() {
         <Container>
           <div className="grid gap-10 md:grid-cols-[2fr_1fr] md:items-start">
             <div>
-              <div className="eyebrow">— 关于 · About —</div>
+              <div className="eyebrow">— {t ? '关于 · About' : 'About · 关于'} —</div>
               <h1 className="mt-3 text-4xl font-bold leading-tight tracking-tight md:text-5xl">
-                添达{' '}
+                {t ? '添达' : 'Tianda'}{' '}
                 <span className="bg-brand-gradient bg-clip-text text-transparent">Kevin</span>
               </h1>
               <p className="mt-3 font-mono text-sm text-muted2">
-                Founder of Tianda Studio · 添达工作室 · 上海
+                {t
+                  ? 'Founder of Tianda Studio · 添达工作室 · 上海'
+                  : 'Founder of Tianda Studio · Shanghai'}
               </p>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink2">
-                10+ 年经验的全栈工程师。2024 年起以
-                <strong className="text-ink"> Tianda Studio (添达工作室) </strong>
-                的名义在 Upwork 独立承接 AI、全栈 Web、Web3 NFT 项目。
-                这个站点是我的作品集、写作和小工具的集合地。
+                {t ? (
+                  <>
+                    10+ 年经验的全栈工程师。2022 年起以
+                    <strong className="text-ink"> Tianda Studio (添达工作室) </strong>
+                    的名义在 Upwork 独立承接 AI、全栈 Web、Web3 NFT 项目。
+                    这个站点是我的作品集、写作和小工具的集合地。
+                  </>
+                ) : (
+                  <>
+                    Full-stack engineer with 10+ years of experience. Since 2022 I have been working independently on Upwork as
+                    <strong className="text-ink"> Tianda Studio</strong>, taking AI, full-stack web, and Web3 NFT projects.
+                    This site collects my work, writing, and small tools.
+                  </>
+                )}
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
                   href="/work"
                   className="rounded-md bg-ink px-5 py-2.5 text-sm font-medium text-paper hover:bg-ink2"
                 >
-                  查看 21 个作品 →
+                  {t ? `查看 ${workCount} 个项目 →` : `See all ${workCount} projects →`}
                 </Link>
                 <a
                   href="https://www.upwork.com/freelancers/~012a1e9c108e49cd19?viewMode=1"
@@ -41,33 +99,28 @@ export default function AboutPage() {
                   rel="noopener"
                   className="rounded-md border border-line2 bg-white px-5 py-2.5 text-sm font-medium hover:border-brand hover:text-brand"
                 >
-                  ↗ Upwork 主页
+                  {t ? '↗ Upwork 主页' : '↗ Upwork profile'}
                 </a>
                 <a
-                  href="mailto:kui.wang.upwork@gmail.com"
+                  href="mailto:872505550@qq.com"
                   className="rounded-md border border-line2 bg-white px-5 py-2.5 text-sm font-medium hover:border-brand hover:text-brand"
                 >
-                  ✉ 发邮件
+                  {t ? '✉ 发邮件' : '✉ Email me'}
                 </a>
               </div>
             </div>
             <aside className="rounded-2xl border border-line bg-white p-6 shadow-card">
-              <h3 className="mb-4 text-sm font-semibold">基本信息</h3>
+              <h3 className="mb-4 text-sm font-semibold">
+                {t ? '基本信息' : 'Quick facts'}
+              </h3>
               <dl className="space-y-2.5 text-sm">
-                {[
-                  { k: '所在地', v: '上海 (UTC+8)' },
-                  { k: '语言', v: '中文母语 / 英文 Pro' },
-                  { k: '从业', v: '2014 — 至今' },
-                  { k: '当前身份', v: '一人工作室创始人' },
-                  { k: '可接单', v: '是 · 24h 内回复' },
-                  { k: '时薪起价', v: '$25/h' },
-                ].map((row) => (
+                {basicInfo.map((row) => (
                   <div
-                    key={row.k}
+                    key={row.k.zh}
                     className="flex justify-between border-b border-line pb-2 last:border-b-0 last:pb-0"
                   >
-                    <dt className="text-muted2">{row.k}</dt>
-                    <dd className="font-mono text-[12px] font-semibold">{row.v}</dd>
+                    <dt className="text-muted2">{row.k[locale]}</dt>
+                    <dd className="font-mono text-[12px] font-semibold">{row.v[locale]}</dd>
                   </div>
                 ))}
               </dl>
@@ -80,9 +133,13 @@ export default function AboutPage() {
       <section className="py-16">
         <Container>
           <div className="mb-8">
-            <div className="eyebrow">— 经历 · Path —</div>
-            <h2 className="mt-2 text-2xl font-bold md:text-3xl">职业路径</h2>
-            <p className="mt-2 text-sm text-muted">从大厂到独立工作室 · 2014 — 至今</p>
+            <div className="eyebrow">— {t ? '经历 · Path' : 'Path · 经历'} —</div>
+            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
+              {t ? '职业路径' : 'Career timeline'}
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              {t ? '从大厂到独立工作室 · 2016 — 至今' : 'From big tech to indie studio · 2016 — now'}
+            </p>
           </div>
           <div className="relative mx-auto max-w-3xl pl-7">
             <span
@@ -104,15 +161,18 @@ export default function AboutPage() {
                   {row.when}
                   {row.isNow && (
                     <span className="ml-1 inline-block rounded bg-brand px-1.5 py-px text-[9px] text-white">
-                      现在
+                      {t ? '现在' : 'now'}
                     </span>
                   )}
                 </div>
                 <div className="text-sm leading-relaxed">
                   <div className="text-base font-semibold">
-                    {row.role.zh} <span className="text-brand">@ {row.company.zh}</span>
+                    {pickLocaleField(row.role, locale)}{' '}
+                    <span className="text-brand">@ {pickLocaleField(row.company, locale)}</span>
                   </div>
-                  <p className="mt-1 text-sm text-muted">{row.description.zh}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {pickLocaleField(row.description, locale)}
+                  </p>
                 </div>
               </div>
             ))}
@@ -124,15 +184,17 @@ export default function AboutPage() {
       <section className="bg-paper2 border-y border-line2 py-16">
         <Container>
           <div className="mb-8">
-            <div className="eyebrow">— 技术栈 · Stack —</div>
-            <h2 className="mt-2 text-2xl font-bold md:text-3xl">技术栈</h2>
+            <div className="eyebrow">— {t ? '技术栈 · Stack' : 'Stack · 技术栈'} —</div>
+            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
+              {t ? '技术栈' : 'Skills & Stack'}
+            </h2>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {skills.map((group) => (
               <div key={group.title.zh} className="rounded-card border border-line bg-white p-5">
                 <h4 className="mb-3 flex items-center gap-2 text-base font-semibold">
                   <span className="h-2 w-2 rounded-full bg-brand" />
-                  {group.title.zh}
+                  {pickLocaleField(group.title, locale)}
                 </h4>
                 <ul className="space-y-1.5 font-mono text-sm text-ink2">
                   {group.items.map((item) => (
@@ -149,46 +211,34 @@ export default function AboutPage() {
       <section className="py-16">
         <Container>
           <div className="mb-8">
-            <div className="eyebrow">— 工作方式 · How I work —</div>
-            <h2 className="mt-2 text-2xl font-bold md:text-3xl">合作方式</h2>
+            <div className="eyebrow">— {t ? '工作方式 · How I work' : 'How I work · 工作方式'} —</div>
+            <h2 className="mt-2 text-2xl font-bold md:text-3xl">
+              {t ? '合作方式' : 'How we work together'}
+            </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {[
-              {
-                title: '单一对接人',
-                body: '从需求拆解、架构设计、编码、部署到后续维护一条龙。没有项目经理来回拉扯，也没有外包团队踢皮球。',
-              },
-              {
-                title: 'Vibe Coding',
-                body: '日常用 Claude Code + Gemini CLI。让我能用更短的时间，交付传统 2-3 人团队的产出量。',
-              },
-              {
-                title: '24h 回复',
-                body: 'UTC+8 (上海)，工作日 24 小时内回复邮件 / Upwork 消息。',
-              },
-              {
-                title: '中英无障碍',
-                body: '中文母语，英文 professional 等级。可以直接和美 / 欧 / 日客户开会与写技术文档。',
-              },
-            ].map((p) => (
-              <div key={p.title} className="rounded-card border border-line bg-paper2 p-5">
-                <h4 className="text-base font-semibold">✦ {p.title}</h4>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{p.body}</p>
+            {principles.map((p) => (
+              <div key={p.title.zh} className="rounded-card border border-line bg-paper2 p-5">
+                <h4 className="text-base font-semibold">✦ {p.title[locale]}</h4>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{p.body[locale]}</p>
               </div>
             ))}
           </div>
           <div className="mt-10 rounded-2xl bg-ink p-7 text-paper md:p-9">
-            <h3 className="text-xl font-bold md:text-2xl">想合作？</h3>
+            <h3 className="text-xl font-bold md:text-2xl">
+              {t ? '想合作？' : 'Want to work together?'}
+            </h3>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted2">
-              邮件最稳；如果是商业项目，建议直接走 Upwork（自带托管担保 + 时薪计费工具）。
-              想随便聊聊就在留言板留个言。
+              {t
+                ? '邮件最稳；如果是商业项目，建议直接走 Upwork（自带托管担保 + 时薪计费工具）。想随便聊聊就在留言板留个言。'
+                : 'Email is the most reliable; for paid engagements, going through Upwork is best (escrow + hourly billing built in). For casual chats, drop a note in the feedback board.'}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
-                href="mailto:kui.wang.upwork@gmail.com"
+                href="mailto:872505550@qq.com"
                 className="rounded-md bg-paper px-5 py-2.5 text-sm font-medium text-ink hover:bg-paper2"
               >
-                ✉ 邮件咨询
+                {t ? '✉ 邮件咨询' : '✉ Email me'}
               </a>
               <a
                 href="https://www.upwork.com/freelancers/~012a1e9c108e49cd19?viewMode=1"
@@ -196,13 +246,13 @@ export default function AboutPage() {
                 rel="noopener"
                 className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
               >
-                ↗ Upwork 找我
+                {t ? '↗ Upwork 找我' : '↗ Hire me on Upwork'}
               </a>
               <Link
                 href="/feedback"
                 className="rounded-md border border-paper/20 px-5 py-2.5 text-sm font-medium hover:bg-white/5"
               >
-                💬 留言反馈
+                {t ? '💬 留言反馈' : '💬 Leave feedback'}
               </Link>
             </div>
           </div>

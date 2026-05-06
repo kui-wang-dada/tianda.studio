@@ -28,4 +28,9 @@ if [ -d "$WEB_DIR" ]; then
 fi
 mv "$TMP_DIR" "$WEB_DIR"
 
+# 让宝塔 nginx (www 用户) 能读
+if id www >/dev/null 2>&1; then
+    chown -R www:www "$WEB_DIR"
+fi
+
 echo "✓ frontend deployed → $WEB_DIR (previous version kept at ${WEB_DIR}.old)"

@@ -39,6 +39,7 @@ const writing = defineCollection({
   schema: s.object({
     ...baseFields,
     reading_time: s.number().optional(),
+    toc:          s.toc(),
     body:         s.mdx(),
   }).transform(d => ({ ...d, permalink: `/writing/${d.slug}` })),
 })

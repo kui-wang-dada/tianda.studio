@@ -1,0 +1,66 @@
+---
+slug: tianda-studio-site
+title:
+  zh: tianda.studio · 个人品牌门户
+  en: tianda.studio — Personal Brand Portal
+excerpt:
+  zh: 你正在浏览的这个站点本身。Next.js 15 静态导出 + FastAPI + Vite Admin 三项目独立部署，一人维护、长期演进的全栈样本。
+  en: The very site you are reading. Next.js 15 static export + FastAPI + Vite Admin, three projects deployed independently — a long-running, single-maintainer full-stack sample.
+external_url: "https://tianda.studio"
+status_label: live
+pricing:
+  zh: 开源 · MIT
+  en: Open source · MIT
+tags:
+  - product
+  - personal-site
+  - nextjs
+  - fastapi
+published_at: 2026-05-05
+featured: true
+---
+
+## 是什么
+
+`tianda.studio` —— 也就是你正在浏览的这个站点 —— 是我自己的个人品牌门户。它不是一个模板套出来的 Hugo / Astro 静态页，而是一个**为长期演进设计的全栈应用**：
+
+- **现在**：作品集 + 产品矩阵 + 技术文章 + 反馈通道
+- **未来 V2**：用户体系 + 评论系统 + 小说连载 + 用户中心
+
+## 技术栈
+
+三项目独立 build / deploy / lifecycle，互相不依赖运行时：
+
+```
+tianda.studio          ── Next.js 15 App Router · output: 'export' · Velite + MDX · Tailwind 3 · Lingui 5
+admin.tianda.studio    ── Vite 6 · React 19 · TanStack Router + Query · axios · Tailwind
+api.tianda.studio      ── FastAPI · Pydantic v2 · SQLAlchemy 2.x async · Postgres 16 · Alembic
+```
+
+**前端**：静态导出，宝塔 nginx 直接托管，零运行时进程，TTFB 极低。
+
+**后端**：FastAPI + asyncpg + slowapi 限流 + structlog 结构化日志。API 路径 4 段前缀（`public / auth / me / admin`）按权限分层，新功能落到对应 tier 即可。
+
+**Admin**：单独子域，独立 SPA，不和主站共享 bundle。
+
+**Cookie 跨子域**：`Domain=.tianda.studio` 让主站 / admin / api 三个子域共享 session。
+
+**部署**：GH Actions 走 `dorny/paths-filter` 检测路径，ssh 进 VPS 触发对应脚本（前端 / admin 是 `git pull + pnpm build + 原子替换目录`，api 是 `docker compose up -d --build`）。一台 4 核 8G 的阿里云 ECS + 宝塔 cover 全部，月成本 150 元。
+
+## 为什么这样选
+
+- **拒绝 Vercel**：国内访问慢；Function 按次计费有隐性账单；自家 VPS 零边际成本
+- **拒绝 SSR / ISR**：个人站没有动态计算需求；静态导出 = 编译期一次到位 + 部署等于 rsync
+- **拒绝三方 CMS**（Notion / Strapi / Sanity）：MDX + git 才有完整版本控制和数据所有权
+- **拒绝三方评论 / 鉴权**：既然已经做了后端，自建的边际成本远低于"数据被锁定"的长期风险
+- **拒绝 OSS / CDN**：单人项目维护时间 > 性能优化收益；VPS 出口带宽国内访问足够
+
+## 想看完整决策细节？
+
+[👉 从零搭建一个全栈个人品牌门户：架构、开发到上线的完整工程实践](/writing/2026-05-tianda-web-tutorial)
+
+那篇文章把每个技术决策的"为什么"和"怎么做"都摊开讲清楚了 —— 1 万 5 千字工程实录。
+
+## 仓库
+
+[GitHub repo →](https://github.com/kui-wang-dada/tianda-web)

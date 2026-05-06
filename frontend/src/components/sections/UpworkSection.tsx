@@ -85,23 +85,51 @@ export function UpworkSection() {
       {/* 3-col grid: narrative + mini cases + services on left, info card on right */}
       <div className="grid gap-6 md:grid-cols-3">
         <div className="space-y-6 md:col-span-2">
-          {/* Narrative */}
-          <motion.p
+          {/* Narrative — bulleted */}
+          <motion.ul
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.4 }}
-            className="text-[15px] leading-relaxed text-paper/90"
+            className="space-y-2 text-[15px] leading-relaxed text-paper/90"
           >
-            {upworkNarrative[locale]}
-          </motion.p>
+            {upworkNarrative[locale].map((line, i) => {
+              const isHighlight = i === upworkNarrative[locale].length - 1
+              return (
+                <li
+                  key={i}
+                  className={`relative pl-6 ${
+                    isHighlight ? 'rounded-md border-l-2 border-successDot bg-successDot/10 px-3 py-2 pl-9' : ''
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0 top-2 grid h-4 w-4 place-items-center rounded-full font-mono text-[10px] font-semibold ${
+                      isHighlight
+                        ? 'left-3 bg-successDot text-ink'
+                        : 'border border-brand2/40 text-brand2'
+                    }`}
+                  >
+                    {isHighlight ? '★' : i + 1}
+                  </span>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: line.replace(
+                        /\*\*(.+?)\*\*/g,
+                        '<strong class="text-paper">$1</strong>',
+                      ),
+                    }}
+                  />
+                </li>
+              )
+            })}
+          </motion.ul>
 
           {/* Mini case strip */}
           <div>
             <div className="mb-3 font-mono text-[11px] uppercase tracking-widest text-brand2">
               {locale === 'zh' ? '★ 部分 Upwork 案例' : '★ Selected Upwork cases'}
             </div>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2.5">
               {upworkMiniCases.map((c, i) => (
                 <motion.button
                   key={c.slug}

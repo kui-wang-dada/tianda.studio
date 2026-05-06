@@ -95,7 +95,7 @@ export function ProductsSection({ items, num }: Props) {
                   <span className="font-mono text-[11px] text-muted2">
                     {item.pricing ? pickLocaleField(item.pricing, locale) : 'Free'}
                   </span>
-                  <span className="text-xs font-medium text-brand">详情 →</span>
+                  <span className="text-xs font-medium text-brand">{locale === 'zh' ? '详情 →' : 'Details →'}</span>
                 </div>
               </Link>
             </motion.div>

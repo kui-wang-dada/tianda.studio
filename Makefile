@@ -1,12 +1,13 @@
-.PHONY: help install dev dev-stack dev-web dev-admin dev-api dev-db build build-web build-admin test lint clean down logs
+.PHONY: help install dev dev-rebuild dev-stack dev-web dev-admin dev-api dev-db build build-web build-admin test lint clean down logs
 
 help:
 	@echo "tianda-web · Tianda Studio"
 	@echo ""
 	@echo "  make install         Install all deps (frontend + admin + backend)"
-	@echo "  make dev             Run db + api (docker) + Next.js (native, :3000)."
+	@echo "  make dev             Run db + api (docker, no rebuild) + Next.js (native, :3000)."
 	@echo "                       admin 单独起，因为日常用得少"
-	@echo "  make dev-stack       Only docker stack (api + db), no web"
+	@echo "  make dev-rebuild     重建 api 镜像（改了 backend/ 代码或 Dockerfile 后用）"
+	@echo "  make dev-stack       Only docker stack (api + db), 前台带日志，no web"
 	@echo "  make dev-web         Run Next.js dev server only (port 3000)"
 	@echo "  make dev-admin       Run Vite admin dev server (port 3002)"
 	@echo "  make dev-api         Run FastAPI natively (port 8000)"
@@ -29,12 +30,16 @@ install:
 
 dev:
 	@echo "→ docker stack (api + db) in background"
-	docker compose -f docker-compose.dev.yml up -d --build
+	docker compose -f docker-compose.dev.yml up -d --remove-orphans
 	@echo "→ Next.js dev on :3000 (Ctrl-C to stop; api/db keep running, use 'make down' to stop them)"
 	cd frontend && pnpm dev
 
+# 改了 backend 代码 / Dockerfile 时用这个；只重建 api，db 不动
+dev-rebuild:
+	docker compose -f docker-compose.dev.yml up -d --build --remove-orphans api
+
 dev-stack:
-	docker compose -f docker-compose.dev.yml up --build
+	docker compose -f docker-compose.dev.yml up --remove-orphans
 
 dev-web:
 	cd frontend && pnpm dev

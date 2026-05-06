@@ -1,0 +1,598 @@
+---
+slug: 2026-05-tianda-web-tutorial
+title:
+  zh: 从零搭建一个全栈个人品牌门户：架构、开发到上线的完整工程实践
+  en: Building a Full-Stack Personal Brand Portal from Scratch — Architecture, Development, and Deployment
+excerpt:
+  zh: 这是 tianda-web（添达工作室）项目的工程实录。每一个技术决策的「为什么」和「怎么做」都摊开来讲，目的不是教程意义上的「跟着我抄一遍」，而是让你看完之后能够为自己的项目做出更恰当的决策——哪怕最终选了和我完全不同的栈。
+  en: A long-form engineering write-up of the tianda-web project. Every decision is laid out with its rationale and trade-offs — not so you can copy them, but so you can make better calls for your own project.
+tags:
+  - architecture
+  - nextjs
+  - fastapi
+  - tutorial
+  - vibe-coding
+published_at: 2026-05-05
+reading_time: 35
+featured: true
+---
+
+> 这是 **tianda-web**（添达工作室）项目的工程实录。我会把每一个技术决策的"为什么"和"怎么做"都摊开来讲，目的不是教程意义上的"跟着我抄一遍"，而是让你看完之后能够**为自己的项目做出更恰当的决策**——哪怕最终选了和我完全不同的栈。
+>
+> 适合读者：希望自建一个长期演进的个人品牌站、独立产品官网或博客系统的开发者；对全栈技术栈选型纠结、想看一个真实样本的工程师；用过 Vercel / Netlify 但想自掌控部署细节的人。
+
+---
+
+## 一、为什么要做这个项目
+
+我做了 10 年全栈，前 5 年在公司做大型业务系统，后 5 年做独立外包。一直缺一个**长期可演进的个人品牌门户**。它要承担四件事：
+
+1. **接外包业务的对外名片**：作品集、技术栈、合作流程一目了然；
+2. **产品矩阵的展示窗口**：未来我会陆续做几个个人产品，每个都需要一个落地页；
+3. **技术图文与小说连载的发表平台**：我喜欢写作，希望有自己的"博客 + 章节阅读"双形态内容平台；
+4. **沉淀互动数据的私有空间**：评论、点赞、阅读进度——这些数据应该是我自己的，不是平台的。
+
+第 4 点是关键。如果只是做一个静态作品集，套个 Hugo / Astro 模板半天就完事，不值得写这篇文章。我真正想要的是**一个可以承接长期演进的全栈应用**——今天它是名片，半年后它是评论系统 + 用户体系，一年后可能加上付费阅读。**架构必须从一开始就为这种演进做好准备**。
+
+但同时——这是单人项目，不是创业产品。我没有时间、也没有必要为 100 万 DAU 优化。架构决策要在"现在足够简单"和"未来可以扩展"之间找平衡，而不是两端跑偏。
+
+这种取舍贯穿整个项目的每一个技术决策。
+
+---
+
+## 二、技术选型的全部考量
+
+### 2.1 总体架构哲学
+
+我有三条**不可妥协**的原则：
+
+#### 原则 1：只引入解决真实问题的技术
+
+不为"看起来专业"加东西。每加一个组件（Redis、Kafka、Sentry、Cloudflare），都要回答：**它解决了什么我现在真实存在的问题？** 不是"以后可能有用"，是"现在已经有问题"。
+
+> 反例：很多人个人站一上来就上 Redis 缓存、上 Cloudflare、上 Sentry。结果维护四个东西的负担远超个人站需要承受的程度，最后弃坑收场。
+
+#### 原则 2：自掌控优先，三方依赖最少
+
+既然我做了后端，就尽量把所有可控的东西放在自己服务器上：评论、用户、邮件、图片。三方 SaaS（Auth0 / Algolia / Sentry）只在**自建成本远高于三方成本**时才考虑。
+
+> 这条原则不是"NIH 综合征"。我不会自己造数据库、不会自己造 Web 框架。但**评论这种业务级的东西**，三方方案带来的"长期数据被锁定"风险远大于自建的工程负担。
+
+#### 原则 3：演进式架构，而非过度设计
+
+**结构上为未来留足空间，实现上只做现在需要的**。比如：
+- API 路径分四段前缀（`public / auth / me / admin`），但 V1 只填了 `public/feedback` 和 `admin/feedback`
+- 数据库里建好了 `users / comments / comment_likes` 三张表，但 V1 不查询、不挂任何 endpoint
+- 后端 cookie 工具函数已经写好（跨子域 Domain 配置），但 V1 没调用
+
+这样做的代价是当前看起来"过度设计"，**收益是 V2 加新功能时不用回头改架构**。
+
+---
+
+### 2.2 前端：Next.js 静态导出（不上 SSR / 不上 Vercel）
+
+**最终选型**：Next.js 15 App Router，开 `output: 'export'`，部署到 VPS 上由宝塔静态托管。
+
+**为什么是 Next.js**：
+- App Router + MDX 支持成熟，写技术文章不用造轮子
+- `generateMetadata` + `sitemap.ts` + `opengraph-image.tsx` 这些 SEO 基础设施开箱即用
+- React 19 + Server Components 的开发体验好——即使最终走静态导出，Server Components 仍然在编译期工作
+
+**为什么是静态导出（`output: 'export'`）而不是 SSR / ISR**：
+
+| 方案 | 个人站适用性 | 我的判断 |
+|---|---|---|
+| 完整 SSR (`output: 'standalone'`) | 需要 Node 容器一直跑，VPS 内存吃紧；个人站根本用不到 SSR 动态计算 | ❌ |
+| ISR（增量静态再生成） | 需要长期运行的 Next 进程，加上 Vercel 之外的自建支持麻烦 | ❌ |
+| **静态导出** | 编译期一次性产出 HTML，部署等于 rsync，无运行时进程 | ✅ |
+
+代价是**接受一组限制**：
+
+- 不能用 middleware
+- 不能用 server-side `cookies()` / `headers()`
+- 不能用 route handler（这正好倒逼浏览器直连后端，反而更干净）
+- `next/image` 的运行时优化失效（需要 `images.unoptimized: true`）
+
+这些限制对个人站完全没问题，因为**该有的都已经在编译期完成了**：SEO（每个文章页都是真实的静态 HTML）、性能（宝塔 nginx 直接吐 HTML，TTFB 很低）、国际化（Lingui 编译期生成中英文资源）。
+
+**为什么不上 Vercel**：
+
+1. 国内访问 Vercel 慢，国内域名走 Vercel 边缘网络效果不如自家 VPS 直接吐
+2. Vercel 的 Function 调用按次计费，写个评论 endpoint 都可能产生隐性账单
+3. **数据库放哪？** Vercel + Supabase / PlanetScale 又是两层依赖
+4. 我已经有 VPS 了，零边际成本
+
+国内独立开发者部署个人站，**自己的阿里云 ECS + 宝塔**几乎永远是性价比最优解。Vercel 适合 indie hacker 做海外 SaaS。
+
+#### 选型加分项
+
+- **Velite**：内容编译器，用 Zod 校验 frontmatter，输出类型化的 `.velite/index.js`。比 Contentlayer（已停维护）更稳定。
+- **Tailwind 3**：CSS 不需要思考。配合自定义 token（`paper / ink / brand`）保证设计一致性。
+- **Lingui 5**：i18n 编译期方案，运行时几乎零开销。中文为主，英文为辅，刚好。
+- **Zustand + Framer Motion**：状态管理和动效都是当前 React 生态最克制的选择。
+- **Shiki + rehype-pretty-code**：代码高亮编译期完成，运行时不需要任何 JS 介入。
+
+---
+
+### 2.3 管理后台：独立的 Vite SPA
+
+**最终选型**：Vite 6 + React 19 + TanStack Router + TanStack Query + axios + shadcn 风格 Tailwind，独立子域 `admin.tianda.studio`。
+
+**为什么不和 Next.js 主站共用一个项目**：
+
+很多教程会教你"在 Next.js 里加一个 `/admin` 路由就完事了"。这条路对个人站不合适：
+
+1. **构建产物耦合**：admin 改一个按钮要重构建整个主站
+2. **登录态污染**：admin 要登录、要 token、要 cookie；主站完全是匿名静态——硬塞在一起需要在每个页面加"是否需要登录"的判断
+3. **依赖耦合**：admin 用了 antd / shadcn，主站不需要这些重 UI 库；放一起会让主站 bundle 体积膨胀
+4. **样式风格差异**：admin 是冷调专业风（数据看板），主站是温暖文艺风（个人品牌）；放一起两边样式互相干扰
+
+把 admin 单独切出来，三个层面解耦：
+
+| 层面 | 主站 | admin |
+|---|---|---|
+| 框架 | Next.js 静态导出 | Vite SPA |
+| UI 风格 | 温暖纸张色 | 冷调深色 |
+| 路由 | 文件路由 (Next App Router) | 文件路由 (TanStack Router) |
+| 数据 | 编译期 MDX | 运行时 fetch |
+| SEO | 必须 | 必须 noindex |
+
+代价是多维护一个 `package.json`、多一组 lockfile、多一份构建脚本。**收益是两个项目互不干扰、独立演进、独立部署**。
+
+---
+
+### 2.4 后端：FastAPI + Pydantic v2 + SQLAlchemy 2.x async
+
+**最终选型**：FastAPI 0.115+ · Pydantic v2 · SQLAlchemy 2.x async · asyncpg · Alembic · slowapi · structlog
+
+**为什么是 Python 而不是 Go / Node / Rust**：
+
+我能写 Go、能写 TypeScript、也能用 Rust 玩 Axum，但选 Python 的原因很具体：
+
+1. **AI 应用扩展性**：未来我会做一些 AI 相关的小功能（文章自动摘要、内容审核），Python 生态最完整；用 Go 调 OpenAI 也行，但 RAG / LangChain / LlamaIndex 这些都是 Python 优先
+2. **数据处理顺手**：访问统计、内容分析这些一次性脚本，Python 5 分钟搞定，Go 要写 50 行
+3. **FastAPI 的 OpenAPI 自动生成**：管理端调试 API 直接看 `/api/v1/docs`，不用 Swagger 单独搭
+
+**为什么是 FastAPI 而不是 Django / Flask**：
+
+| 框架 | 我的判断 |
+|---|---|
+| Django | 全家桶很完整，但 admin 我已经决定单独做了；Django ORM 不如 SQLAlchemy 灵活；async 支持是后期补的 |
+| Flask | 太小，每次都要自己拼鉴权 / 序列化 / 文档；不值得 |
+| **FastAPI** | Pydantic 校验 + 自动文档 + async 原生 + 依赖注入，这套组合是当前 Python Web 的最优解 |
+
+**Pydantic v2 + FastAPI 让 backend 代码看起来非常薄**：
+
+```python
+@router.post("/feedback", response_model=FeedbackOut, status_code=201)
+@limiter.limit("3/minute;10/hour")
+async def submit_feedback(
+    request: Request,
+    body: FeedbackIn,
+    db: AsyncSession = Depends(get_db),
+) -> FeedbackOut:
+    if body.website:  # 蜜罐
+        return FeedbackOut(ok=True)
+    fb = await feedback_service.create(db, body, request=request)
+    return FeedbackOut(ok=True, id=fb.id)
+```
+
+10 行代码完成校验、限流、IP hash、入库、响应。换 Flask 要 30 行，换 Django 要 50 行。
+
+---
+
+### 2.5 数据库：Postgres 16，仅一张活表
+
+**为什么是 Postgres**：JSONB、tsvector 全文搜索、行级锁、async 友好（asyncpg）。
+
+**为什么 V1 只激活一张表**：
+
+我在 V1 的初版迁移里就建好了 `users / comments / comment_likes` 三张表的 schema，但所有相关的 endpoint 都不写、不查。原因是：
+
+> 表结构的设计成本是一次性的，但 endpoint 一旦上线就要一直维护。先把表结构想清楚（V1 一次到位），endpoint 等真的需要再写（V2 分批）。
+
+这种 **"schema 早 / API 晚"** 的策略避免了两类问题：
+
+1. 一旦激活了用户体系，你的整个后端复杂度立刻翻倍（认证、鉴权、邮件、密码重置）
+2. 等到 V2 才设计 schema，会被既有数据形态绑架，做出妥协的设计
+
+**Alembic 自动迁移**：每次启动 api 容器都会自动跑 `alembic upgrade head`，新 schema 自动应用。
+
+---
+
+### 2.6 内容管理：Velite + MDX，文件即数据库
+
+**为什么不用 CMS（Strapi / Notion / Sanity）**：
+
+1. **每次构建要联网拉 Notion**：Notion 挂了，CI 就挂
+2. **Notion API 配额限制**
+3. **数据被锁在 Notion**：迁移成本高
+4. **frontmatter 不可控**：属性字段映射要写适配层
+
+**MDX + git 的优势**：完整版本控制、富内容支持、编辑器自由、部署即发布。
+
+**为什么是 Velite 而不是 Contentlayer**：Contentlayer 2024 年起停维护，Velite 是社区接力。API 几乎一致，输出 `.velite/index.js` 完全类型化：
+
+```typescript
+const work = defineCollection({
+  name: 'Work',
+  pattern: 'work/**/*.mdx',
+  schema: s.object({
+    slug:         s.slug('global'),
+    title:        s.object({ zh: s.string(), en: s.string() }),
+    type:         s.enum(['web3', 'ai', 'app', 'web', /* ... */]),
+    tech_stack:   s.array(s.string()),
+    body:         s.mdx(),
+  }).transform(d => ({ ...d, permalink: `/work/${d.slug}` })),
+})
+```
+
+**双语 frontmatter** 全部走 `{ zh: ..., en: ... }` 嵌入式结构，不分文件。页面渲染用 `pickLocaleField()` 按当前 locale 拿对应字段。
+
+---
+
+### 2.7 部署：宝塔静态托管 + Docker Compose（仅 api+db）
+
+**最终形态**：
+
+```
+                  GH Actions (path-filter)
+                          │
+   ┌──────────────────────┼──────────────────────┐
+   │                      │                      │
+frontend/**          admin/**            backend/**
+   │                      │                      │
+   └─ ssh →               └─ ssh →               └─ ssh →
+      git pull               git pull               git pull
+      pnpm build             pnpm build             docker compose up --build api
+      atomic mv → /www/.../web   atomic mv → /www/.../admin
+```
+
+**关键决策**：
+
+1. **前端 / admin 不进容器**——纯静态文件，宝塔 nginx 直接托管目录即可
+2. **api 进容器**——隔离 Python 运行时和 VPS 主机环境
+3. **数据库进容器**——和 api 一起 compose，volume 挂载持久化
+4. **不上 OSS / CDN**——单人个人站，VPS 出口带宽足够
+
+**为什么 GH Actions 走 ssh 而不是 GHCR + pull**：
+
+| 方案 | GHCR 构建 | VPS 本地构建 |
+|---|---|---|
+| 网络消耗 | GH Actions 拉 base image，VPS 拉镜像 | 仅 git pull 代码 |
+| 国内拉镜像速度 | 慢（GHCR 在海外） | 快 |
+| GH Actions 时长 | 长 | 短 |
+| 镜像版本管理 | 有 SHA tag，回滚方便 | 仅 git history |
+
+对个人站来说，第二种方案完全够用，且节省 GH Actions 配额。**回滚需求低于一周一次**，git checkout 完全能应付。
+
+---
+
+### 2.8 我刻意拒绝的技术
+
+| 技术 | 为什么不上 |
+|---|---|
+| Redis | V1 没有热点 key 写入场景；评论计数等用 DB 字段维护够了 |
+| Celery / arq | 没有定时任务、没有耗时操作 |
+| Sentry | 报错日志走 structlog 写文件，定期看够了 |
+| Cloudflare CDN | 国内不工作；阿里云 CDN 又是一笔费用 |
+| Nginx 容器 | 宝塔自带 nginx |
+| Caddy | 同上 |
+| Kubernetes | 一台 VPS 部署三个东西，杀鸡用牛刀 |
+| 三方评论（Disqus / Giscus） | 自建评论的"边际成本"很低；评论数据被锁定的风险更高 |
+| 三方鉴权（Auth0 / Clerk） | 邮箱 + 密码 + OTP 自建 1 周搞定 |
+| Notion / Strapi 当 CMS | 见 2.6 |
+| Vercel / Netlify | 见 2.2 |
+| GraphQL | API 数量少，REST + 4 段路径前缀完全够用 |
+| tRPC | 前后端非同语言，tRPC 没意义 |
+| Turborepo / Nx 工作区 | 三个项目独立 lockfile，pnpm + 三个目录就行 |
+
+**注意**：这个清单不是"这些技术不好"，而是"对当前项目阶段不需要"。等业务真长到那一步再加，不晚。
+
+---
+
+## 三、项目结构与边界
+
+完整目录树（仓库根）：
+
+```
+tianda-web/
+├── frontend/             Next.js 15 主站（静态导出）
+│   ├── src/
+│   │   ├── app/          路由（文件式）
+│   │   ├── components/   blocks / layout / mdx / sections / ui
+│   │   ├── lib/          api / content / i18n 工具
+│   │   └── stores/       Zustand 状态
+│   ├── velite.config.ts  内容编译配置
+│   ├── tailwind.config.ts
+│   └── next.config.ts    output: 'export'
+│
+├── admin/                Vite + React Admin SPA
+│   ├── src/
+│   │   ├── routes/       TanStack Router 文件路由
+│   │   ├── lib/          axios 实例
+│   │   └── main.tsx
+│   └── vite.config.ts
+│
+├── backend/              FastAPI
+│   ├── app/
+│   │   ├── api/v1/       4 段前缀路由
+│   │   │   └── endpoints/
+│   │   │       ├── public/        # 任何人可访问
+│   │   │       ├── auth/          # 登录/注册（V2 M1）
+│   │   │       ├── me/            # 已登录用户（V2 M1）
+│   │   │       └── admin/         # 管理员
+│   │   ├── core/         config / security / cookies / rate_limit
+│   │   ├── db/           session + base
+│   │   ├── models/       SQLAlchemy ORM
+│   │   ├── schemas/      Pydantic 校验
+│   │   └── services/     业务逻辑
+│   ├── alembic/          数据库迁移
+│   └── pyproject.toml
+│
+├── content/              MDX 源文件（git 仓库内，不进容器）
+│   ├── work/             作品集
+│   ├── writing/          技术文章
+│   ├── products/         产品介绍
+│   ├── novels/           小说元数据（V2）
+│   └── shared/
+│
+├── scripts/
+│   ├── deploy-frontend.sh
+│   ├── deploy-admin.sh
+│   └── setup-vps.sh
+│
+├── .github/workflows/
+│   ├── ci.yml            PR 检查（tsc / ruff / pytest）
+│   └── deploy.yml        main 推送时按 path-filter 触发部署
+│
+├── docker-compose.yml
+├── Makefile
+├── .env.example
+├── CLAUDE.md
+└── V2_PLAN.md
+```
+
+**API 路径前缀分层**（V2 演进的关键）：
+
+```
+/api/v1/health                   公开健康检查
+/api/v1/public/feedback          POST 提交反馈
+/api/v1/public/comments          GET 评论列表（V2 M3）
+/api/v1/auth/register            POST 注册（V2 M1）
+/api/v1/auth/login               POST 登录（V2 M1）
+/api/v1/me/profile               GET 个人资料（V2 M1）
+/api/v1/me/comments              POST 发表评论（V2 M3）
+/api/v1/admin/feedback           GET 管理员看反馈
+/api/v1/admin/comments           GET/PATCH 评论审核（V2 M3）
+```
+
+V1 只填了 `health / public/feedback / admin/feedback`，但目录骨架四段都已经建好。**新加 endpoint 落到对应 tier 的子目录就行**，不用动 router 编排逻辑。
+
+---
+
+## 四、关键设计决策深度解析
+
+### 4.1 为什么静态导出而不是 SSR
+
+**SSR 的好处对个人站都不存在**：
+
+- 我的内容是 MDX 文件，编译期已经全部知道
+- 没有动态用户内容（评论是 CSR fetch 异步加载）
+- 没有按用户切换的页面权限
+
+**静态导出的实质收益**：
+
+- **零运行时**：一旦部署，整站不跑任何 Node 进程
+- **TTFB 极低**：nginx 直接吐 HTML
+- **可移植**：产物可以扔 OSS / GitHub Pages / 任何静态托管
+- **安全面缩小**：没有 server endpoint 暴露在主站域名
+
+**接受的限制清单**：
+
+| 失效特性 | 解决方案 |
+|---|---|
+| `middleware.ts` | 客户端逻辑或反代层处理 |
+| `cookies()` / `headers()` | 移到 client component + fetch |
+| `revalidate*` ISR | 全静态 + push 触发重构建 |
+| `next/image` 自动优化 | `images: { unoptimized: true }` |
+| route handlers | 浏览器直接 fetch 后端域 |
+| `app/sitemap.ts` 里的 `dynamic` | 必须 `export const dynamic = 'force-static'` |
+
+---
+
+### 4.2 为什么浏览器直连后端而不走 BFF
+
+主流做法是用 Next.js route handler 当 BFF，浏览器只调主站域名。**我反过来**：删除所有 route handler，浏览器直接打 `api.tianda.studio`。
+
+**走 route handler 的两个真正用途**：
+
+1. 隐藏内部 API 的 baseURL 和路径
+2. 安全地管理 httpOnly cookie
+
+**对我都不需要**：
+
+1. 我的 API 域名 `api.tianda.studio` 已经公开，反正都能扫到
+2. cookie 我可以让 FastAPI 直接下发，`Domain=.tianda.studio` 跨子域共享
+
+**直连的好处**：
+
+- 少一层网络跳转
+- Next.js 主站可以纯静态，不需要 Node 运行时
+- 调试更直接：浏览器 DevTools 看到的就是真实请求
+
+**唯一的成本**：CORS 配置 + 跨子域 cookie domain。
+
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://tianda.studio", "https://admin.tianda.studio"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
+```
+
+---
+
+### 4.3 为什么 Cookie 跨子域而不是 token in localStorage
+
+Token 存 localStorage 是新手最常见的方案，**也是最危险的方案**：
+
+| 存储位置 | XSS 攻击者能拿到吗 | CSRF 攻击者能利用吗 |
+|---|---|---|
+| localStorage | 是 | 否 |
+| memory（Zustand 不持久化） | 是 | 否 |
+| **httpOnly cookie** | 否 | 是（但 SameSite=Lax 已挡住跨站请求） |
+
+XSS 风险远大于 CSRF。所以：
+
+- **refresh token**：必须 httpOnly cookie，永远不进 JS
+- **access token**：可以放 memory（zustand 不持久化），刷新页面靠 refresh cookie 重换
+
+跨子域 cookie 实现：
+
+```
+Domain=.tianda.studio   → tianda.studio + admin.tianda.studio + api.tianda.studio 共享
+HttpOnly                → JS 读不到
+Secure                  → 仅 https
+SameSite=Lax            → 默认挡住跨站 POST，允许同站 GET
+```
+
+本地开发时 `Domain=` 留空（host-only cookie），因为 `localhost` 不支持跨子域。
+
+---
+
+### 4.4 为什么不用 OSS / CDN
+
+**成本对比**（典型月活 1000-5000 的个人站）：
+
+| 方案 | 月成本估算 |
+|---|---|
+| 阿里云 ECS（4 核 8G）+ 宝塔静态托管 | 150 元（一台机器 cover 全部） |
+| OSS（500MB） + CDN（10GB 流量）+ ECS | 200+ 元 |
+
+**钱不是关键，复杂度是**：
+
+- OSS 需要 RAM 子账号、bucket policy、跨域配置、防盗链
+- CDN 需要域名 CNAME、SSL 证书托管、缓存策略
+- 多一套要监控、要备份、要排查的服务
+
+**单人项目的 KPI 应该是"维护时间最少"，不是"性能最好"**。
+
+什么时候该上 OSS：用户上传图片功能、仓库总大小超过 1GB、月流量超过 100GB。
+
+---
+
+### 4.5 为什么自建评论而不是接 Giscus
+
+**Giscus** 适合开发者博客（读者本来就有 GitHub 账号）。**对个人品牌站不合适**：
+
+- 我希望的读者**不一定有 GitHub 账号**（小说读者、产品潜在用户）
+- 评论需要审核（垃圾邮件、营销）
+- 未来要做点赞、@提醒、嵌套回复——这些 Giscus 都不支持
+
+既然我已经做了后端（feedback 已上线），评论的"边际工作量"很低：数据库表已建好、后端 3-4 个 endpoint、前端一个 `<CommentSection>` 客户端组件。
+
+**总工作量约 4 天**（V2 M3 规划）。换来：数据完全自有 + 用户体系也是自己的 + 未来加付费阅读 / 订阅 / 私信都能直接接。
+
+---
+
+## 五、踩坑实录
+
+### 5.1 静态导出下 sitemap.ts 必须 `force-static`
+
+```ts
+// frontend/src/app/sitemap.ts
+export const dynamic = 'force-static'  // ← 没这行 build 会报错
+```
+
+`opengraph-image.tsx` / `robots.ts` 同理。
+
+### 5.2 Lingui SWC 插件与 Next 15.5+ 不兼容
+
+Lingui 5 的 SWC 插件官方还没修复对 Next 15.5+ 内部组件的兼容问题。改用 `@lingui/react` 的 runtime API + babel-plugin-macros 提取。代价是构建时部分文件走 babel 而不是 swc，构建慢一点。**功能完全正常**。
+
+### 5.3 admin 子域必须 SPA fallback
+
+TanStack Router 是客户端路由，刷新非 `/` 路径会 404。nginx 必须配：
+
+```nginx
+location / {
+    try_files $uri $uri/ /index.html;
+}
+```
+
+### 5.4 跨子域 cookie 在本地不工作
+
+本地开发时 `localhost` / `127.0.0.1` 不能用 `.tianda.studio` 这种 domain。解决：
+
+```python
+COOKIE_DOMAIN: str = ""  # 本地空，生产 .tianda.studio
+```
+
+cookie helper 在 domain 为空时不传 `domain` 参数，让浏览器按 host-only 处理。
+
+### 5.5 next/image 在静态导出下失效
+
+```ts
+// next.config.ts
+images: { unoptimized: true }
+```
+
+补救：用 Pillow 在上传时预生成多尺寸 webp，或者干脆用 `<img>` 直接写。
+
+### 5.6 Velite 输出 `.velite` 目录后 tsc 找不到类型
+
+`tsconfig.json` 里 path alias：
+
+```json
+{
+  "paths": {
+    "@/*": ["./src/*"],
+    "#site/content": ["./.velite"]
+  }
+}
+```
+
+`.velite/index.d.ts` 是 Velite 自动生成的类型声明文件。
+
+### 5.7 GH Actions ssh 进 VPS 报 "command not found: pnpm"
+
+GH Actions 通过 ssh 进来的是 non-login shell，不会 source `.bashrc`。pnpm 路径找不到。在脚本开头显式加 PATH：
+
+```bash
+export PATH="$HOME/.local/share/pnpm:$PATH"
+```
+
+---
+
+## 六、后续扩展规划
+
+V2 共 7 个里程碑，约 18.5 个工作日（4 周）。
+
+| 里程碑 | 内容 | 工时 |
+|---|---|---|
+| **M1 用户系统** | argon2 密码哈希 + JWT + httpOnly cookie + 邮件 OTP | 3 天 |
+| **M2 Admin 业务** | feedback 审核、用户管理面板 | 2 天 |
+| **M3 评论系统** | 评论 + 点赞 + 嵌套回复 + 敏感词 + admin 审核 | 4 天 |
+| **M4 用户中心** | /me/profile、/me/comments、/me/settings | 1.5 天 |
+| **M5 小说连载** | 小说详情 SSG + 章节 CSR + 阅读进度 + admin 编辑器 | 4 天 |
+| **M6 阿里云 OSS** | 用户上传图片接 OSS | 1.5 天 |
+| **M7 SEO + 收尾** | JSON-LD + sitemap 完善 + Lighthouse 优化 | 0.5 天 |
+
+V1 的架构骨架已经把这些都准备好了：4 段路由前缀、comments / users 表 schema、cookies.py 工具函数、CORS + cookie domain 配置——V2 时基本只填业务逻辑，不动架构。
+
+---
+
+## 结语
+
+这套架构不是"最现代"的方案，没用到 Bun / Deno / Workers / Edge Runtime / Drizzle / tRPC 这些 2026 年的热词。但它是**给一个人维护的、能持续演进 5 年的**方案。
+
+我做工程 10 年学到的一件事：**架构的好坏不是看技术多新，是看它能不能在你的精力曲线上长期存活**。每多一个组件，就多一份周末加班排查问题的概率。每多一层抽象，就多一次半年后回来看不懂的尴尬。
+
+减法比加法难。这份文档里我做了**很多次减法**：拒绝 Vercel、拒绝 Redis、拒绝三方评论、拒绝 OSS、拒绝 GHCR、拒绝 SSR、拒绝一体化项目。每一次拒绝都对应一段思考，**每一次保留也都对应一个真实需求**。
+
+希望这份文档能帮到你。如果你按类似的思路搭了自己的项目，欢迎把链接发给我——就贴在 [/feedback](/feedback) 的留言里，让我知道这条路上有同伴。
+
+—— 添达 · Kevin

@@ -8,14 +8,22 @@ import { heroStats, pickLabel } from '@/lib/data/stats'
 import { AnimateIn } from '@/components/blocks/AnimateIn'
 import { useLightboxStore } from '@/stores/lightbox.store'
 
-const RESUME_IMAGES = [
-  { src: '/img/resume/cn.png', alt: '中文简历', caption: '中文简历 · 添达 Kevin' },
-  { src: '/img/resume/en.png', alt: 'EN Resume', caption: 'English Resume · Kevin Wang' },
-]
-
 export function HeroSection() {
   const locale = useLocale()
   const openLightbox = useLightboxStore((s) => s.open)
+
+  const RESUME_IMAGES = [
+    {
+      src: '/img/resume/cn.png',
+      alt: locale === 'zh' ? '中文简历' : 'Chinese resume',
+      caption: locale === 'zh' ? '中文简历 · 添达 Kevin' : 'Chinese résumé · Tianda Kevin',
+    },
+    {
+      src: '/img/resume/en.png',
+      alt: locale === 'zh' ? '英文简历' : 'English resume',
+      caption: 'English Resume · Kevin Wang',
+    },
+  ]
 
   return (
     <section className="pb-12 pt-10 md:pb-16 md:pt-14">
@@ -105,8 +113,8 @@ export function HeroSection() {
                 <div className="flex gap-2">
                   <ResumeThumb
                     src="/img/resume/cn.png"
-                    label="中文"
-                    sub="简历"
+                    label={locale === 'zh' ? '中文' : 'ZH'}
+                    sub={locale === 'zh' ? '简历' : 'Resume'}
                     onClick={() => openLightbox(RESUME_IMAGES, 0)}
                   />
                   <ResumeThumb

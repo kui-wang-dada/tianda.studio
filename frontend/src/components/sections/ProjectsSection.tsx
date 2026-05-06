@@ -126,7 +126,7 @@ function ProjectCard({ item }: { item: WorkItem }) {
         </div>
         <div className="mt-2.5 flex items-center justify-between font-mono text-[11px] text-muted2">
           <span>{item.period}</span>
-          <span className="text-brand">详情 →</span>
+          <span className="text-brand">{locale === 'zh' ? '详情 →' : 'Details →'}</span>
         </div>
       </Link>
     </div>
