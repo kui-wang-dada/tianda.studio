@@ -22,7 +22,7 @@ app = FastAPI(
     title="Tianda Studio API",
     version=settings.APP_VERSION,
     lifespan=lifespan,
-    docs_url="/api/v1/docs" if settings.ENV == "dev" else None,
+    docs_url="/docs",
     redoc_url=None,
     openapi_url="/api/v1/openapi.json" if settings.ENV == "dev" else None,
 )
