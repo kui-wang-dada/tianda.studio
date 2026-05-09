@@ -14,7 +14,7 @@ from app.core.rate_limit import limiter
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # NOTE: alembic upgrade head runs in entrypoint.sh, before uvicorn boots.
+    # NOTE: schema is created by postgres-init.sql on first volume boot; no migrations on app startup.
     yield
 
 

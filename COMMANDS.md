@@ -104,26 +104,26 @@ uv run ruff check                            # lint
 uv run ruff format                           # 自动格式化
 ```
 
-### Alembic 数据库迁移
+### 数据库 schema 修改（手写 SQL）
+
+Schema 真源是 `postgres-init.sql`（仓库根），仅在首次启动 postgres 容器时执行。
+后续要改表 / 加列 / 加索引：
 
 ```bash
-cd backend
+# 1. 在线改：进 dev 容器跑 SQL
+docker compose -f docker-compose.dev.yml exec db psql -U tianda -d tianda
+# 比如 ALTER TABLE feedbacks ADD COLUMN tag VARCHAR(32);
 
-# 看当前迁移状态
-uv run alembic current
+# 2. 同时在 postgres-init.sql 里加上同样的 DDL，下一次新建的环境才会一致
 
-# 跑到最新（生产容器 entrypoint 自动跑这条）
-uv run alembic upgrade head
+# 3. 改 SQLAlchemy 模型 backend/app/models/*.py 让 ORM 查询能拿到新字段
 
-# 自动生成新迁移（改了 models 之后）
-uv run alembic revision --autogenerate -m "describe what changed"
-
-# 手写迁移
-uv run alembic revision -m "describe what changed"
-
-# 回退一个版本
-uv run alembic downgrade -1
+# 重置 dev 数据库（清空数据，重跑 init.sql）
+docker compose -f docker-compose.dev.yml down -v
+make dev
 ```
+
+生产环境改 schema：scp 一段 SQL 上 VPS，`docker compose exec db psql -U tianda -d tianda -f /path/to.sql`。
 
 ---
 
@@ -257,7 +257,8 @@ lsof -nP -iTCP:3002 -sTCP:LISTEN     # admin 端口
 ### CORS / cookie 不工作
 检查 backend `CORS_ORIGINS` 是否包含浏览器实际访问的 origin（含端口），以及 `COOKIE_DOMAIN` 在本地是否为空（跨子域 cookie 仅在生产 `.tianda.studio` 下生效）。
 
-### Alembic 报"type already exists"
+### postgres-init.sql 改了但表没更新
+postgres-init.sql 只在 **pg_data 卷为空时**首次运行。改 schema 后要么手动连 psql 跑 ALTER，要么重置数据卷：
 ```bash
 docker compose -f docker-compose.dev.yml down -v
 make dev

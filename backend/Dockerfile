@@ -20,7 +20,7 @@ COPY backend/pyproject.toml backend/uv.lock* ./
 RUN uv pip install --system --no-cache \
     "fastapi>=0.115.0" "uvicorn[standard]>=0.32.0" \
     "pydantic>=2.10.0" "pydantic-settings>=2.7.0" \
-    "sqlalchemy[asyncio]>=2.0.36" "asyncpg>=0.30.0" "alembic>=1.14.0" \
+    "sqlalchemy[asyncio]>=2.0.36" "asyncpg>=0.30.0" \
     "slowapi>=0.1.9" "structlog>=24.4.0" "python-multipart>=0.0.20" "email-validator>=2.2.0"
 
 # ─────────────── runtime ───────────────
@@ -50,8 +50,6 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY backend/app ./app
-COPY backend/alembic ./alembic
-COPY backend/alembic.ini ./alembic.ini
 COPY backend/entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh && chown -R app:app /app

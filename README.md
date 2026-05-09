@@ -25,7 +25,7 @@ make dev-admin       # 另一个终端：Vite admin dev on :3002
 | Frontend (主站) | Next.js 15 静态导出 (`output: 'export'`) + Tailwind 3 + Lingui 5 + Zustand + Framer Motion |
 | Admin SPA | Vite 6 + React 19 + TanStack Router + TanStack Query + axios + Tailwind |
 | Content | Velite + MDX（frontmatter 驱动，作品/产品/技术文章不入 DB） |
-| Backend | FastAPI + Pydantic v2 + SQLAlchemy async + Alembic + slowapi |
+| Backend | FastAPI + Pydantic v2 + SQLAlchemy async + slowapi |
 | Database | Postgres 16 |
 | Reverse proxy | 宝塔面板（生产）· 直接静态托管 web / admin · 反代 api 子域 |
 | Container | Docker Compose（生产仅 api + db） |

@@ -118,5 +118,14 @@ jobs:
             . /www/wwwroot/tianda-web/.env
             set +a
             docker compose up -d --build --no-deps api db
-            sleep 6
-            docker compose exec -T api curl -fsS http://localhost:8000/api/v1/health || (docker compose logs api && exit 1)
+            # 轮询健康检查，最多等 60s（uvicorn 启动通常要 5-10s）
+            for i in $(seq 1 30); do
+              if docker compose exec -T api curl -fsS http://localhost:8000/api/v1/health >/dev/null 2>&1; then
+                echo "✓ api healthy after ${i} attempts"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "✗ api health check timeout (60s)"
+            docker compose logs api --tail 80
+            exit 1
