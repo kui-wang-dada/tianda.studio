@@ -62,9 +62,13 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
+            # 3 个 deploy job 并行跑同一个 repo，git 操作必须串行化
+            flock -x /var/lock/tianda-web-git.lock bash -c '
+              cd /www/wwwroot/tianda-web/repo
+              git fetch --depth=1 origin main
+              git reset --hard origin/main
+            '
             cd /www/wwwroot/tianda-web/repo
-            git fetch --depth=1 origin main
-            git reset --hard origin/main
             ./scripts/deploy-frontend.sh
 
   # Admin → ssh 到 VPS：git pull → pnpm build → 原子替换 /www/wwwroot/tianda-web/admin
@@ -81,9 +85,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
+            flock -x /var/lock/tianda-web-git.lock bash -c '
+              cd /www/wwwroot/tianda-web/repo
+              git fetch --depth=1 origin main
+              git reset --hard origin/main
+            '
             cd /www/wwwroot/tianda-web/repo
-            git fetch --depth=1 origin main
-            git reset --hard origin/main
             ./scripts/deploy-admin.sh
 
   # API → ssh 到 VPS：git pull → docker compose up --build（VPS 本地构建镜像）
@@ -100,9 +107,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
+            flock -x /var/lock/tianda-web-git.lock bash -c '
+              cd /www/wwwroot/tianda-web/repo
+              git fetch --depth=1 origin main
+              git reset --hard origin/main
+            '
             cd /www/wwwroot/tianda-web/repo
-            git fetch --depth=1 origin main
-            git reset --hard origin/main
             # 把 .env 加载到 shell 环境，确保 compose 的 ${VAR:-default} 插值能拿到 PIP_INDEX_URL / APT_MIRROR 等
             set -a
             . /www/wwwroot/tianda-web/.env
