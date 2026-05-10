@@ -23,7 +23,11 @@ cp -R out/. "$TMP_DIR/"
 
 if [ -d "$WEB_DIR" ]; then
     OLD_DIR="${WEB_DIR}.old"
-    rm -rf "$OLD_DIR"
+    # 宝塔在站点根放 .user.ini 并 chattr +i，rm 之前先解锁
+    if [ -d "$OLD_DIR" ]; then
+        find "$OLD_DIR" -name ".user.ini" -exec chattr -i {} \; 2>/dev/null || true
+        rm -rf "$OLD_DIR"
+    fi
     mv "$WEB_DIR" "$OLD_DIR"   # 保留 .old 一份，便于一键回滚
 fi
 mv "$TMP_DIR" "$WEB_DIR"

@@ -292,12 +292,14 @@ VPS 三网站全在宝塔配 SSL；前端 / admin 由 GH Actions ssh 触发 git 
 
 ---
 
-### M3 — 评论系统（4 天）
+### M3 — 评论系统 + 内容点赞（4.5 天）
 
-**目标**：主站任意 MDX 文章 / 作品 / 产品页底部能挂评论；admin 可审核。
+**目标**：主站任意 MDX 文章 / 作品 / 产品页底部能挂评论 + 顶部能点赞内容本身；admin 可审核评论。
+
+#### 3.1 评论系统（≈ 4 天）
 
 - `comments` 表扩展：`target_type / target_slug / parent_id / body / body_html / status / like_count / ip_hash`
-- `comment_likes` 已有 schema 即用
+- `comment_likes` 已有 schema 即用（点赞**评论**）
 - 端点：
   - `GET /api/v1/public/comments?target_type=&target_slug=` — 仅 approved
   - `POST /api/v1/me/comments` — 进入 pending
@@ -318,6 +320,20 @@ VPS 三网站全在宝塔配 SSL；前端 / admin 由 GH Actions ssh 触发 git 
 - `CommentItem.tsx` — 嵌套一层
 
 **Admin**：`_authed/comments.tsx` 待审列表 + 批量操作
+
+#### 3.2 内容级点赞（≈ 0.5 天，与评论共享 target 寻址）
+
+**目标**：每个 MDX 文章 / 作品 / 产品页可登录用户点赞，显示总数。
+
+- 新表 `content_reactions`：`(target_type, target_slug, user_id)` 联合主键 + `created_at`，索引 `(target_type, target_slug)`
+- **必须登录**（与评论同一登录态），未登录点击跳 `/login?redirect=`
+- 端点：
+  - `GET /api/v1/public/reactions?target_type=&target_slug=` — 返回 `{like_count, liked_by_me}`（liked_by_me 仅登录态有效，匿名固定 false）
+  - `POST /api/v1/me/reactions` — 幂等点赞，body: `{target_type, target_slug}`
+  - `DELETE /api/v1/me/reactions` — body 同上
+- 限流：用户级 30/min;500/day（点赞动作比评论高频）
+- 主站 `<LikeButton target_type=... target_slug=... />` — CSR，挂载时 fetch 当前 count + liked_by_me；不参与构建时静态计数（避免 stale）
+- 不进 admin 审核流（点赞无须审核），但 admin 能在 user 详情页看用户的点赞历史（M2 用户页扩展点）
 
 ---
 
@@ -416,13 +432,13 @@ class ReadingProgress(Base):
 |---|---|---|
 | M1 用户 + 认证 | 3 天 | 3 |
 | M2 Admin 业务 | 2 天 | 5 |
-| M3 评论系统 | 4 天 | 9 |
-| M4 用户中心 | 1.5 天 | 10.5 |
-| M5 小说连载 | 4 天 | 14.5 |
-| M6 阿里云 OSS | 1.5 天 | 16 |
-| M7 SEO 收尾 | 0.5 天 | 16.5 |
+| M3 评论系统 + 内容点赞 | 4.5 天 | 9.5 |
+| M4 用户中心 | 1.5 天 | 11 |
+| M5 小说连载 | 4 天 | 15 |
+| M6 阿里云 OSS | 1.5 天 | 16.5 |
+| M7 SEO 收尾 | 0.5 天 | 17 |
 
-**V2 总计 ~16.5 工作日**，按每天 6h 实际投入约 3.5 周。
+**V2 总计 ~17 工作日**，按每天 6h 实际投入约 3.5 周。
 
 ---
 
